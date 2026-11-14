@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+# Usage: scripts/worktree <command> [options]
+#
+# NAME
+#   worktree -- Create and manage git worktrees
+#
+# SYNOPSIS
+#   scripts/worktree create [--claude] [name] [commit-ish]
+#   scripts/worktree remove [--claude] [name]
+#   scripts/worktree list
+#
+# DESCRIPTION
+#   Manages git worktrees under .claude/worktrees/ in the project root for
+#   parallel development.
+#
+# COMMANDS
+#   create [name] [commit-ish]
+#     Creates .claude/worktrees/{dir} with branch {name} from {commit-ish}
+#     (default HEAD), where {dir} is {name} with each "/" replaced by "-"
+#     (feature/foo/bar lands at .claude/worktrees/feature-foo-bar). If the
+#     branch already exists, it is checked out.
+#
+#     With --claude, reads JSON from stdin (expects .name), suppresses output
+#     to stderr, and prints the absolute worktree path to stdout.
+#
+#   remove [name]
+#     Removes .claude/worktrees/{dir} and deletes its branch.
+#
+#     With --claude, reads JSON from stdin (expects .worktree_path), runs
+#     silently with no stdout output.
+#
+#   list
+#     Runs `git worktree list`.
+#
+# EXAMPLES
+#   scripts/worktree create billing-refactor
+#   scripts/worktree create billing-refactor main
+#   scripts/worktree list
+#   scripts/worktree remove billing-refactor
+#   echo '{"name":"hooktest"}' | scripts/worktree create --claude
+#   echo '{"worktree_path":"/path"}' | scripts/worktree remove --claude
+#
+# OPTIONS
+#   -h, --help
+#     Print this help message and exit.
+
+if [[ "${DEBUG:-}" ]]; then
+  export PS4='+ [${BASH_SOURCE[0]##*/}:${LINENO}${FUNCNAME[0]:+:${FUNCNAME[0]}()}] '
+  set -x
+fi
+
+set -euo pipefail
+
+SOURCE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+WORKTREES_DIR="$SOURCE_DIR/.claude/worktrees"
+
+# -- Help ---------------------------------------------------------------------
+
+if [[ "${1:-}" = "-h" ]] || [[ "${1:-}" = "--help" ]]; then
+  sed -ne '/^#/!q;s/^#$/# /;/^# /s/^# //p' < "$0" |
+    awk -v f="${1#-h}" '!f && /^Usage:/ || u { u=!/^s*(eg:)?$/; if (!u) exit } u || f'
+  exit 0
+fi
+
+# worktree_dir prints the worktree path for branch name $1, flattened to one
+# level under $WORKTREES_DIR.
+worktree_dir() {
+  echo "$WORKTREES_DIR/${1//\//-}"
+}
+
+# -- create -------------------------------------------------------------------
+
+cmd_create() {
+  local claude="" name="" base=""
+
+  if [[ "${1:-}" = "--claude" ]]; then
+    claude=1
+    shift
+  fi
+
+  if [[ "${claude:-}" = 1 ]]; then
+    name="$(jq -r .name)"
+  else
+    name="${1:?Usage: scripts/worktree create [name] [commit-ish]}"
+    base="${2:-}"
+  fi
+
+  local worktree_path
+  worktree_path="$(worktree_dir "$name")"
+
+  if [[ -d "$worktree_path" ]]; then
+    if [[ "${claude:-}" = 1 ]]; then
+      echo "$worktree_path"
+    else
+      echo "Error: $worktree_path already exists." >&2
+    fi
+    exit 1
+  fi
+
+  mkdir -p "$WORKTREES_DIR"
+
+  # Redirect output: claude mode sends to stderr (suppressed by caller), manual to stdout
+  local out=/dev/stdout
+  if [[ "${claude:-}" = 1 ]]; then
+    out=/dev/stderr
+  fi
+
+  {
+    echo "==> Creating git worktree at $worktree_path..."
+    if git -C "$SOURCE_DIR" rev-parse --verify "$name" > /dev/null 2>&1; then
+      if [[ -n "$base" ]]; then
+        echo "Warning: branch '$name' already exists, ignoring base '$base'." >&2
+      fi
+      git -C "$SOURCE_DIR" worktree add "$worktree_path" "$name"
+    else
+      git -C "$SOURCE_DIR" worktree add -b "$name" "$worktree_path" ${base:+"$base"}
+    fi
+  } > "$out" 2>&1
+
+  if [[ "${claude:-}" = 1 ]]; then
+    echo "$worktree_path"
+  else
+    local current_branch
+    current_branch="$(git -C "$worktree_path" branch --show-current)"
+
+    cat << EOF
+
+Worktree ready!
+  Path:     $worktree_path
+  Branch:   $current_branch
+
+Get started:
+  cd $worktree_path
+  claude
+
+To remove later:
+  scripts/worktree remove $name
+EOF
+  fi
+}
+
+# -- remove -------------------------------------------------------------------
+
+cmd_remove() {
+  local claude="" name="" worktree_path=""
+
+  if [[ "${1:-}" = "--claude" ]]; then
+    claude=1
+    shift
+  fi
+
+  if [[ "${claude:-}" = 1 ]]; then
+    worktree_path="$(jq -r .worktree_path)"
+  else
+    name="${1:?Usage: scripts/worktree remove [name]}"
+    worktree_path="$(worktree_dir "$name")"
+  fi
+
+  # Redirect output: claude mode suppresses everything, manual to stdout
+  local out=/dev/stdout
+
+  if [[ "${claude:-}" = 1 ]]; then
+    out=/dev/null
+  fi
+
+  {
+    local branch_name
+    branch_name="$(git -C "$worktree_path" branch --show-current 2> /dev/null || true)"
+
+    echo "==> Removing worktree..."
+    git -C "$SOURCE_DIR" worktree remove --force "$worktree_path"
+    git -C "$SOURCE_DIR" worktree prune
+
+    if [[ -n "$branch_name" ]]; then
+      echo "==> Deleting branch ${branch_name}..."
+      git -C "$SOURCE_DIR" branch -D "$branch_name" 2> /dev/null || true
+    fi
+
+    echo "Done."
+  } > "$out" 2>&1
+}
+
+# -- list ---------------------------------------------------------------------
+
+cmd_list() {
+  git -C "$SOURCE_DIR" worktree list
+}
+
+# -- Dispatch -----------------------------------------------------------------
+
+case "${1:-}" in
+  create)
+    shift
+    cmd_create "$@"
+    ;;
+  remove)
+    shift
+    cmd_remove "$@"
+    ;;
+  list|ls) cmd_list ;;
+  *)
+    echo "Usage: scripts/worktree <create|remove|list> [options]" >&2
+    echo "" >&2
+    echo "Run 'scripts/worktree --help' for details." >&2
+    exit 1
+    ;;
+esac
