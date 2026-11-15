@@ -16,3 +16,17 @@ extension PeepUITestApp {
         window.descendants(matching: .any)["preprocessor-failure-bar"].firstMatch
     }
 }
+
+extension PeepUITestApp {
+    /// The launch arguments that start the app with fixture script `path` (relative to
+    /// `Fixtures`, e.g. `processors/html.sh`) as its custom processor (#106). Bundle fixtures
+    /// for the same reason as `preprocessorArguments(fixture:)`.
+    static func processorArguments(fixture path: String) throws -> [String] {
+        ["-PeepUITestProcessor", try Fixtures.url(named: path).path(percentEncoded: false)]
+    }
+
+    /// The custom processor's failure bar in `window`.
+    func processorFailureBar(in window: XCUIElement) -> XCUIElement {
+        window.descendants(matching: .any)["processor-failure-bar"].firstMatch
+    }
+}

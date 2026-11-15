@@ -14,9 +14,12 @@ struct MarkdownPreferences: Equatable, Sendable {
     /// `MarkdownSettings.optionalPreprocessors` ever appear here.
     var builtInPreprocessors: Set<MarkdownTransform> = []
     /// The custom preprocessor (#57), stage 1 of the pipeline, or `nil` when it's off. Comes
-    /// from `CustomPreprocessorSettings`, not this store: `MarkdownDocument.renderPreferences`
+    /// from `CustomProgramSettings`, not this store: `MarkdownDocument.renderPreferences`
     /// fills it in. `apply(to:)` ignores it; `DocumentContent.rendering` runs it.
-    var customPreprocessor: CustomPreprocessorPreference?
+    var customPreprocessor: CustomProgramPreference?
+    /// The custom processor (#106), which renders the body in place of Peep's renderer, or `nil`
+    /// when it's off. Filled in and ignored like `customPreprocessor`.
+    var customProcessor: CustomProgramPreference?
 
     /// GFM, frontmatter hidden, no built-in preprocessors: the app before #55, and `peep --html`.
     static let `default` = MarkdownPreferences()

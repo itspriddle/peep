@@ -154,7 +154,7 @@ struct PreprocessorTests {
     @Test("control characters in the stderr tail are escaped; line breaks and tabs are kept")
     func stderrTailIsTerminalSafe() {
         let error = PreprocessorError(.exited(status: 1), standardError: "bad\u{1B}[31m\tline\r\nnext\n")
-        let failure = PreprocessorOptions.failure("doc.md", error)
+        let failure = CustomProgramCommand.failure("doc.md", error)
         #expect(failure.message == "doc.md: The preprocessor exited with status 1.\nbad\\u{1B}[31m\tline\nnext")
         #expect(failure.status == 70)
     }

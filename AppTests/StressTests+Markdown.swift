@@ -16,7 +16,7 @@ extension StressTests {
     /// reloads, as `makeWindowControllers()` does, without waiting for the page.
     func open(
         _ url: URL, markdownSettings: MarkdownSettings, themeSettings: ThemeSettings? = nil,
-        preprocessor: CustomPreprocessorSettings? = nil
+        preprocessor: CustomProgramSettings? = nil
     ) throws -> (MarkdownDocument, DocumentWindowController) {
         let document = try MarkdownDocument(contentsOf: url, ofType: Self.markdownType)
         document.markdownSettings = markdownSettings

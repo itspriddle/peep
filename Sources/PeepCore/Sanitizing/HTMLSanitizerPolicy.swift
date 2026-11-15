@@ -106,3 +106,36 @@ enum HTMLSanitizerPolicy {
     private static let linkSchemes: Set<String> = ["http", "https", "mailto"]
     private static let resourceSchemes: Set<String> = ["http", "https"]
 }
+
+/// Which allowlist an `HTMLSanitizer` applies.
+public enum HTMLSanitizerMode: Sendable, Equatable {
+    /// Raw HTML written in a Markdown document (`HTMLSanitizerPolicy` as is): the default.
+    case rawHTML
+    /// The whole HTML fragment a custom processor wrote (#106). The raw-HTML allowlist plus
+    /// what Markdown renderers emit for ordinary syntax (`HTMLSanitizerPolicy.ProcessorOutput`):
+    /// `class` (minus Peep's reserved names), disabled task-list checkboxes, `section`, and
+    /// `id`/`name` without the `user-content-` prefix (there are no generated ids to collide
+    /// with). Everything that runs script, loads content, or styles inline stays removed.
+    case processorOutput
+}
+
+extension HTMLSanitizerPolicy {
+    /// The additions `HTMLSanitizerMode.processorOutput` makes to the raw-HTML allowlist.
+    enum ProcessorOutput {
+        /// Extra elements: footnote sections (pandoc, markdown-it) and task-list checkboxes.
+        static let elements: Set<String> = ["section", "input"]
+
+        /// `class` tokens a processor may not use, because Peep's own markup, base layer, or
+        /// scripts key on them: the article wrapper, blocked remote image placeholders, and
+        /// anything `peep-`.
+        static func isReservedClass(_ token: Substring) -> Bool {
+            token == "markdown-body" || token.hasPrefix("remote-image") || token.hasPrefix("peep-")
+        }
+
+        /// `value` with reserved and empty tokens removed, or nil when none are left.
+        static func allowedClasses(_ value: String) -> String? {
+            let tokens = value.split(whereSeparator: \.isWhitespace).filter { !isReservedClass($0) }
+            return tokens.isEmpty ? nil : tokens.joined(separator: " ")
+        }
+    }
+}

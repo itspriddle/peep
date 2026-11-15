@@ -23,7 +23,14 @@ extension PeepCommand {
         themeFlavor.apply(to: &options)
         renderFlags.apply(to: &options)
         let renderer = renderFlags.renderer(options: options, for: document.source)
-        let rendered = renderer.render(markdown)
+        let rendered: RenderedDocument
+        if processor.isSet {
+            let prepared = renderer.prepare(markdown)
+            let html = try await processor.process(prepared.body, of: document, in: environment) ?? ""
+            rendered = renderer.render(processedHTML: html, of: prepared)
+        } else {
+            rendered = renderer.render(markdown)
+        }
         renderFlags.report(rendered, options: options, for: document.source, in: environment)
         if output.fragment {
             return rendered.html.hasSuffix("\n") || rendered.html.isEmpty ? rendered.html : rendered.html + "\n"

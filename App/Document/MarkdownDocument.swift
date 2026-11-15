@@ -68,7 +68,14 @@ final class MarkdownDocument: NSDocument {
 
     /// The custom preprocessor settings (#57) this document renders with. Changing them (or
     /// the store) renders the document again. Tests set their own store right after opening.
-    @ObservationIgnored var customPreprocessorSettings: CustomPreprocessorSettings = .shared {
+    @ObservationIgnored var customPreprocessorSettings: CustomProgramSettings = .preprocessor {
+        didSet {
+            renderIfSettingsChanged()
+        }
+    }
+
+    /// The custom processor's settings (#106), followed like `customPreprocessorSettings`.
+    @ObservationIgnored var customProcessorSettings: CustomProgramSettings = .processor {
         didSet {
             renderIfSettingsChanged()
         }
@@ -80,7 +87,7 @@ final class MarkdownDocument: NSDocument {
         let selector = #selector(markdownSettingsDidChange(_:))
         center.addObserver(self, selector: selector, name: MarkdownSettings.didChangeNotification, object: nil)
         center.addObserver(
-            self, selector: selector, name: CustomPreprocessorSettings.didChangeNotification, object: nil)
+            self, selector: selector, name: CustomProgramSettings.didChangeNotification, object: nil)
     }
 
     /// A document of standard input's Markdown (#68): no file, rendered like a read.
@@ -123,7 +130,7 @@ final class MarkdownDocument: NSDocument {
         // A closed document no longer follows Settings > Markdown.
         NotificationCenter.default.removeObserver(self, name: MarkdownSettings.didChangeNotification, object: nil)
         NotificationCenter.default.removeObserver(
-            self, name: CustomPreprocessorSettings.didChangeNotification, object: nil)
+            self, name: CustomProgramSettings.didChangeNotification, object: nil)
         dropPendingRender()
         updateRenderActivity()
         super.close()
@@ -176,10 +183,12 @@ final class MarkdownDocument: NSDocument {
     }
 
     /// What a render of this document uses now: Settings > Markdown's preferences (#55) and the
-    /// custom preprocessor, if on (#57). Read on the main actor and passed to the render.
+    /// custom preprocessor (#57) and processor (#106), if on. Read on the main actor and passed
+    /// to the render.
     var renderPreferences: MarkdownPreferences {
         var preferences = markdownSettings.preferences
         preferences.customPreprocessor = customPreprocessorSettings.preference
+        preferences.customProcessor = customProcessorSettings.preference
         return preferences
     }
 
@@ -227,11 +236,14 @@ final class MarkdownDocument: NSDocument {
         LaunchTiming.mark("rendered")
         dropPendingRender()
         self.content = content
+        let documentName: String = fileURL?.lastPathComponent ?? displayName
         if content.preferences.customPreprocessor != nil {
             customPreprocessorSettings.recordRun(
-                CustomPreprocessorRun(
-                    documentName: fileURL?.lastPathComponent ?? displayName, date: .now,
-                    error: content.preprocessorError))
+                CustomProgramRun(documentName: documentName, date: .now, error: content.preprocessorError))
+        }
+        if content.preferences.customProcessor != nil {
+            customProcessorSettings.recordRun(
+                CustomProgramRun(documentName: documentName, date: .now, error: content.processorError))
         }
         fileStatus = .current
         for case let controller as DocumentWindowController in windowControllers {
@@ -258,7 +270,8 @@ final class MarkdownDocument: NSDocument {
 
     @objc private func markdownSettingsDidChange(_ notification: Notification) {
         let object = notification.object as AnyObject?
-        guard object === markdownSettings || object === customPreprocessorSettings else {
+        guard object === markdownSettings || object === customPreprocessorSettings || object === customProcessorSettings
+        else {
             return
         }
         renderIfSettingsChanged()

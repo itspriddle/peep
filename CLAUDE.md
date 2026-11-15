@@ -73,8 +73,12 @@ lock the build database.
     an injected `WikiLinkFolderReader`), `FileSystemFolderReader` (the real reader for the app
     and CLI: regular files and folders only, no symbolic links or packages), and `SourceLines`
     (which bracket bytes were written as is rather than escaped).
-  - `Preprocessor/`: the custom preprocessor runner (#56; VISION's security model has the
-    contract and limits). `CustomPreprocessor.run(input:documentURL:)` is async and
+  - `Preprocessor/`: the custom program runner (#56; VISION's security model has the
+    contract and limits), shared by `CustomPreprocessor` and `CustomProcessor` (#106, its HTML
+    replaces stages 4-6: `HTMLRenderer.prepare(_:)` then `render(processedHTML:of:)`, which
+    sanitizes with `HTMLSanitizerMode.processorOutput`; `SourceProcessor`) through
+    `CustomProgramRunner`, with a `CustomProgramKind` naming the program in
+    `PreprocessorError.message`. `CustomPreprocessor.run(input:documentURL:)` is async and
     cancellable. `PreprocessorConfiguration` validates the executable and
     `PreprocessorLimits` holds the bounds; failures are `PreprocessorError`.
     `PreprocessorEnvironment` builds the env and working directory, `PreprocessorProcess`
@@ -138,7 +142,7 @@ lock the build database.
     `init(defaults:isPersistent:)`, a property and `set…` method on the model, and a row.
     `MarkdownSettingsView` (#55) is Settings > Markdown: default flavor, frontmatter display,
     built-in preprocessors (one row per `MarkdownSettings.optionalPreprocessors` entry), then
-    room for the custom preprocessor (#57).
+    the custom preprocessor (#57) and processor (#106) sections.
   - `WikiLinks/`: `DocumentWikiLinks` (a per-render `FolderWikiLinkResolver` for a document,
     used by `DocumentContent` and Copy as HTML) over PeepCore's `FileSystemFolderReader`.
   - `MarkdownSettings/`: `MarkdownSettings` (the store: default flavor id, frontmatter
@@ -146,15 +150,20 @@ lock the build database.
     value a render takes; `apply(to:)` sets `RenderOptions`). Unlike window defaults these
     apply to open documents: `MarkdownDocument` follows the store and re-renders in place, and
     `DocumentContent.preferences` records what a page was rendered with.
-  - `CustomPreprocessor/` (#57): `CustomPreprocessorSettings` (store: on/off, executable,
-    arguments, the session's `lastRun`; `shared` in memory under tests, or set by
-    `-PeepUITestPreprocessor`), `CustomPreprocessorModel` (Settings' model: the enable warning,
-    the Open panel), `DocumentContent.rendering(_:of:preferences:)` (the async render: runs the
-    preprocessor, falls back to the unprocessed source with `preprocessorError`), and
-    `PreprocessorFailureBar`. The setting reaches renders as
-    `MarkdownPreferences.customPreprocessor` (`MarkdownDocument.renderPreferences`), so a change
-    re-renders open documents like any Settings > Markdown change. The section view is
-    `Settings/CustomPreprocessorSection`.
+  - `CustomProgram/` (#57, #106): the custom preprocessor and processor share one store, model,
+    bar, and Settings section, each built for a `CustomProgramKind` (PeepCore; app text and
+    accessibility prefixes in `CustomProgramKind+App`). `CustomProgramSettings` (store: on/off,
+    executable, arguments, the session's `lastRun`; `.preprocessor` and `.processor` shared
+    instances with their own `Keys`, in memory under tests, or set by `-PeepUITestPreprocessor`
+    / `-PeepUITestProcessor`), `CustomProgramModel` (Settings' model: the enable warning, the
+    Open panel), `DocumentContent.rendering(_:of:preferences:)` (the async render: runs the
+    preprocessor, then the processor on the body; each failure falls back, with
+    `preprocessorError` / `processorError`), and `CustomProgramFailureBar` (both bars share
+    one `safeAreaInset` in `DocumentView`: another inset kept closed windows' documents alive).
+    The settings reach renders as `MarkdownPreferences.customPreprocessor` / `customProcessor`
+    (`MarkdownDocument.renderPreferences`), so a change re-renders open documents like any
+    Settings > Markdown change. `DocumentContent.processedHTML` is the processor's raw output;
+    pages and Copy as HTML sanitize it. The section view is `Settings/CustomProgramSection`.
   - `CommandLineTool/` (#70): App menu > Install / Repair / Uninstall Command Line Tool….
     `CommandLineToolInstaller` (the rules over an injected folder and app: state, atomic
     install, uninstall, and the constant privileged shell scripts; an `Item` per linked file,
@@ -248,7 +257,8 @@ lock the build database.
   `CLI/PeepCLIKit` (library) is the command: `PeepCommand` (parse, cross-group `validate()`,
   mode pick, `execute(in: CLIEnvironment)`) plus one `@OptionGroup` file per concern
   (`InputOptions`, `OutputOptions`, `ThemeFlavorOptions`, `RenderFlagOptions`,
-  `PreprocessorOptions`, `AppOpenOptions`), `PeepCommand+HTML` (headless output),
+  `PreprocessorOptions`, `ProcessorOptions`, `AppOpenOptions`; the two program groups share
+  `CustomProgramCommand`), `PeepCommand+HTML` (headless output),
   `PeepCommand+App` and `AppOpening` (opening in the app), `ExitStatus` (sysexits codes, listed
   in `--help`), and `CLIError` (one `peep: …` stderr line plus a status). `CLI/Main` is the
   executable (SwiftPM `PeepCLI`, Xcode `peep-cli`) and only calls `PeepCommand.main()`. A new flag

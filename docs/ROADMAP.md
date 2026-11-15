@@ -473,7 +473,8 @@ manual checklist is in the milestone PR)
   process or descriptor leaks. See VISION's security model.
 - Custom preprocessor in the app (#57): off by default, turned on only in Settings > Markdown
   after a warning, with the program chosen in an Open panel and arguments as a list
-  (`CustomPreprocessorSettings`, `MarkdownPreferences.customPreprocessor`). It runs on every
+  (`CustomPreprocessorSettings`, now `CustomProgramSettings.preprocessor`, and
+  `MarkdownPreferences.customPreprocessor`). It runs on every
   document the app opens (no extension filter). A failure renders the document without it plus a
   bar with the reason and a Show Details stderr disclosure (no alert, no error page). Settings
   shows the session's last run instead of a "Test on…" button. Live reload reruns it; newer
@@ -1024,6 +1025,11 @@ A running list of what 1.0 includes, in rough priority order. Each becomes its o
 - **Proofreading:** highlight configurable words and phrases to avoid (weasel words, passive
   voice, custom lists) as an overlay toggle
 - **Vim plugin:** open/preview the current buffer in Peep with live updates
+- **Custom processor (#106, in progress):** another Markdown renderer (pandoc, markdown-it, …)
+  in place of Peep's, opt-in like the custom preprocessor, with the same runner and limits. Its
+  HTML is always sanitized (a processor-output allowlist that adds `class`, disabled task-list
+  checkboxes, and `section`), and it falls back to Peep's renderer with a bar when it fails.
+  Settings > Markdown > Custom processor; `peep --processor PATH --processor-arg ARG`
 
 ## Process
 

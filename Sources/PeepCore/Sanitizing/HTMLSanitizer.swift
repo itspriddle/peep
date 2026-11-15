@@ -34,10 +34,13 @@ public struct HTMLSanitizer: Sendable {
     public var remoteImages: RemoteImagePolicy
     /// Root-relative URLs resolve against this folder (`HTMLSanitizer+RootRelative.swift`).
     public var linkRoot: String?
+    /// Raw HTML in Markdown (the default), or a custom processor's output (#106).
+    public var mode: HTMLSanitizerMode
 
-    public init(remoteImages: RemoteImagePolicy = .keep, linkRoot: String? = nil) {
+    public init(remoteImages: RemoteImagePolicy = .keep, linkRoot: String? = nil, mode: HTMLSanitizerMode = .rawHTML) {
         self.remoteImages = remoteImages
         self.linkRoot = linkRoot
+        self.mode = mode
     }
 
     /// Returns `root` with every raw-HTML node sanitized. Nodes that sanitize to nothing are
@@ -68,7 +71,8 @@ public struct HTMLSanitizer: Sendable {
         return sanitize(fragment: html, blockedImages: &blockedImages)
     }
 
-    private func sanitize(fragment html: String, blockedImages: inout [RemoteImage]) -> String {
+    /// `sanitize(fragment:)`, also appending the remote images it replaced.
+    func sanitize(fragment html: String, blockedImages: inout [RemoteImage]) -> String {
         var sanitizer = makeRawSanitizer()
         let output = sanitizer.sanitize(html) + sanitizer.finish()
         blockedImages += sanitizer.takeBlockedImages()
@@ -176,15 +180,17 @@ struct RawHTMLSanitizer {
     private var dropping: Drop?
     let remoteImages: RemoteImagePolicy
     let linkRoot: String?
+    let mode: HTMLSanitizerMode
     /// Remote images replaced with placeholders since the last `takeBlockedImages()`.
     private var blockedImages: [RemoteImage] = []
     /// The open `<picture>` already reported a blocked image (from a removed `<source>`), so its
     /// `<img>` doesn't count as a second one.
     private var pictureReportedBlockedImage = false
 
-    init(remoteImages: RemoteImagePolicy = .keep, linkRoot: String? = nil) {
+    init(remoteImages: RemoteImagePolicy = .keep, linkRoot: String? = nil, mode: HTMLSanitizerMode = .rawHTML) {
         self.remoteImages = remoteImages
         self.linkRoot = linkRoot
+        self.mode = mode
     }
 
     /// Returns and clears the remote images replaced so far.
@@ -263,7 +269,7 @@ struct RawHTMLSanitizer {
             }
             return
         }
-        guard Policy.elements.contains(tag.name) else {
+        guard allowsElement(tag.name) else {
             return
         }
         if let ancestors = Policy.requiredAncestors[tag.name],
@@ -276,6 +282,10 @@ struct RawHTMLSanitizer {
         }
         if remoteImages != .keep, let replacement = remoteImageReplacement(for: tag) {
             output += replacement
+            return
+        }
+        if tag.name == "input" {
+            output += checkbox(tag)
             return
         }
         output += "<\(tag.name)"
@@ -353,15 +363,20 @@ struct RawHTMLSanitizer {
     private func attributes(of tag: HTMLStartTag) -> String {
         typealias Policy = HTMLSanitizerPolicy
         var output = ""
-        for attribute in tag.attributes where Policy.allowsAttribute(attribute.name, on: tag.name) {
-            let isPrefixed = Policy.prefixedAttributes.contains(attribute.name)
+        for attribute in tag.attributes where allowsAttribute(attribute.name, on: tag.name) {
+            let isIdentifier = Policy.prefixedAttributes.contains(attribute.name)
+            let isPrefixed = isIdentifier && mode == .rawHTML
             guard let raw = attribute.value else {
-                if !isPrefixed {
+                if !isIdentifier && attribute.name != "class" {
                     output += " \(attribute.name)"
                 }
                 continue
             }
             let value = AttributeValue(raw)
+            if attribute.name == "class" {
+                output += Self.classAttribute(value)
+                continue
+            }
             if let schemes = Policy.urlSchemes[tag.name]?[attribute.name] {
                 let urls = attribute.name == "srcset" ? URLSchemePolicy.srcsetURLs(value.decoded) : [value.decoded]
                 guard urls.allSatisfy({ URLSchemePolicy.allows($0, schemes: schemes) }) else {
@@ -369,10 +384,10 @@ struct RawHTMLSanitizer {
                 }
             }
             var serialized = rootRelativeValue(of: attribute.name, on: tag.name, value) ?? value.serialized
+            if isIdentifier && value.decoded.isEmpty {
+                continue
+            }
             if isPrefixed {
-                guard !value.decoded.isEmpty else {
-                    continue
-                }
                 if !value.decoded.hasPrefix(Policy.userContentPrefix) {
                     serialized = Policy.userContentPrefix + serialized
                 }

@@ -18,8 +18,10 @@ import Foundation
 ///   instead of `~/Library/Application Support/Peep/Themes`. Without it a UI-test launch loads
 ///   no custom themes, so tests never read or create the reader's folder.
 /// - `-PeepUITestPreprocessor <path>`: start with the custom preprocessor (#57) on, running the
-///   executable at this absolute path with no arguments (`CustomPreprocessorSettings.shared`,
+///   executable at this absolute path with no arguments (`CustomProgramSettings.preprocessor`,
 ///   in memory). Without it a UI-test launch has no preprocessor, whatever the reader set.
+/// - `-PeepUITestProcessor <path>`: the same for the custom processor (#106)
+///   (`CustomProgramSettings.processor`).
 /// - `-PeepUITestRenderDelay <seconds>`: every render (first renders, live reloads, Settings
 ///   re-renders) waits this long off the main actor before it starts, so a test can see the
 ///   slow-render indicator (#58) without depending on how fast the machine is. The wait is
@@ -39,6 +41,8 @@ enum UITestHooks {
         static let themesFolderKey = "PeepUITestThemesFolder"
         /// Launch argument (a `UserDefaults` key) with an absolute path to a custom preprocessor.
         static let preprocessorKey = "PeepUITestPreprocessor"
+        /// Launch argument with an absolute path to a custom processor (#106).
+        static let processorKey = "PeepUITestProcessor"
         /// Launch argument (a `UserDefaults` key) with a delay, in seconds, added to every render.
         static let renderDelayKey = "PeepUITestRenderDelay"
         /// Launch argument (a `UserDefaults` key) with an absolute path to install the CLI in.
@@ -95,9 +99,17 @@ enum UITestHooks {
 
     /// The custom preprocessor executable a UI test asked for, or nil. Always nil in Release.
     static var preprocessorExecutable: String? {
+        executable(forKey: preprocessorKey)
+    }
+
+    /// The custom processor executable a UI test asked for (#106), or nil. Always nil in Release.
+    static var processorExecutable: String? {
+        executable(forKey: processorKey)
+    }
+
+    private static func executable(forKey key: String) -> String? {
         #if DEBUG
-            guard isUITesting, let path = UserDefaults.standard.string(forKey: preprocessorKey), path.hasPrefix("/")
-            else {
+            guard isUITesting, let path = UserDefaults.standard.string(forKey: key), path.hasPrefix("/") else {
                 return nil
             }
             return path

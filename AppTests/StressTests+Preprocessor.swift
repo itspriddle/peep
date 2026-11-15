@@ -14,7 +14,7 @@ import WebKit
 extension StressTests {
     /// Opens `url` in a window that runs the custom preprocessor from `settings` and live
     /// reloads, as `makeWindowControllers()` does, without waiting for the page.
-    func open(_ url: URL, preprocessor settings: CustomPreprocessorSettings) throws -> (
+    func open(_ url: URL, preprocessor settings: CustomProgramSettings) throws -> (
         MarkdownDocument, DocumentWindowController
     ) {
         let document = try MarkdownDocument(contentsOf: url, ofType: Self.markdownType)
@@ -185,4 +185,74 @@ struct MisbehavingScript {
     let name: String
     let path: String
     let failure: String?
+}
+
+/// The custom processor under load (#106): it shares the preprocessor's runner, so this checks
+/// the processor's own path. Windows on processors that hang or crash fall back to Peep's
+/// renderer with the reason, windows closed mid-run stop their scripts and are freed, and no
+/// process is left.
+extension StressTests {
+    /// Opens `url` in a window that renders with the custom processor from `settings`.
+    func open(_ url: URL, processor settings: CustomProgramSettings) throws -> (
+        MarkdownDocument, DocumentWindowController
+    ) {
+        let document = try MarkdownDocument(contentsOf: url, ofType: Self.markdownType)
+        document.customProcessorSettings = settings
+        document.makeWindowControllers()
+        document.showWindows()
+        let controller = try #require(document.windowControllers.first as? DocumentWindowController)
+        return (document, controller)
+    }
+
+    @Test("processors that hang or crash fall back to Peep's renderer and leave no processes behind")
+    func misbehavingProcessors() async throws {
+        let defaults = try ThrowawayDefaults("peep-stress")
+        let scripts = PreprocessorScripts(folder: folder)
+        let cases = [
+            MisbehavingScript(name: "hang", path: try scripts.hang(), failure: "timedOut"),
+            MisbehavingScript(name: "crash", path: try scripts.crash(), failure: "signaled"),
+        ]
+        var windows: [(script: MisbehavingScript, window: (MarkdownDocument, DocumentWindowController))] = []
+        for script in cases {
+            let settings = PreprocessorScripts.settings(.processor, running: script.path, defaults: defaults.defaults)
+            for index in 0..<3 {
+                let name = script.name
+                let url = try write("# \(name) \(index)\n\nBody of \(name).\n", to: "processor-\(name)-\(index).md")
+                windows.append((script, try open(url, processor: settings)))
+            }
+        }
+        defer {
+            for (_, (document, _)) in windows {
+                document.close()
+            }
+        }
+        for (script, (document, controller)) in windows {
+            try await until("\(script.name) loads", timeout: .seconds(20)) { controller.coordinator.hasLoadedPage }
+            let content = try #require(document.content)
+            #expect(content.processorError?.kind == .processor, "\(script.name)")
+            #expect(content.processorError?.reason.kindName == script.failure, "\(script.name)")
+            #expect(try await bodyText(controller).contains("Body of \(script.name)."), "\(script.name)")
+        }
+        #expect(try await scripts.processesGone(), "no script, child, or zombie left: \(scripts.pids())")
+    }
+
+    @Test("closing windows while their processors run stops every processor and frees the documents")
+    func closeMidProcessor() async throws {
+        let defaults = try ThrowawayDefaults("peep-stress")
+        let scripts = PreprocessorScripts(folder: folder)
+        let hang = PreprocessorScripts.settings(.processor, running: try scripts.hang(), defaults: defaults.defaults)
+        weak var lastDocument: MarkdownDocument?
+        for index in 0..<3 {
+            let url = try write("# Closing \(index)", to: "closing-processor-\(index).md")
+            let (document, _) = try open(url, processor: hang)
+            if index > 0 {
+                try await Task.sleep(for: .milliseconds(150))
+            }
+            document.close()
+            #expect(document.pendingRender == nil)
+            lastDocument = document
+        }
+        #expect(try await scripts.processesGone(), "no script, child, or zombie left: \(scripts.pids())")
+        try await until("the closed document is freed") { lastDocument == nil }
+    }
 }

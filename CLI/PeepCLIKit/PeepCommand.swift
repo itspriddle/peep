@@ -8,7 +8,7 @@ import PeepCore
 ///
 /// Adding a flag: declare it in its concern's group (e.g. `RenderFlagOptions`), check it in that
 /// group's `validate()`, and read it where the group is used (`apply(to:)`, `theme(for:)`,
-/// `preprocess(_:)`, `AppOpening`). Only a rule spanning groups belongs in `validate()` here.
+/// `preprocess(_:)`, `process(_:of:in:)`, `AppOpening`). Only a rule spanning groups belongs in `validate()` here.
 public struct PeepCommand: AsyncParsableCommand {
     public static let configuration = CommandConfiguration(
         commandName: "peep",
@@ -27,6 +27,7 @@ public struct PeepCommand: AsyncParsableCommand {
     @OptionGroup public var themeFlavor: ThemeFlavorOptions
     @OptionGroup(title: "Rendering") public var renderFlags: RenderFlagOptions
     @OptionGroup(title: "Preprocessor") public var preprocessor: PreprocessorOptions
+    @OptionGroup(title: "Processor") public var processor: ProcessorOptions
     @OptionGroup public var app: AppOpenOptions
 
     public init() {}
@@ -47,6 +48,9 @@ public struct PeepCommand: AsyncParsableCommand {
         if preprocessor.isSet, !output.rendersHTML, !themeFlavor.lists {
             throw ValidationError(
                 "--preprocessor changes HTML output only; add --html, --fragment, or --output.")
+        }
+        if processor.isSet, !output.rendersHTML, !themeFlavor.lists {
+            throw ValidationError("--processor changes HTML output only; add --html, --fragment, or --output.")
         }
         if app.wait, output.rendersHTML || themeFlavor.lists {
             throw ValidationError("--wait is for opening files in the app, not for --html, --fragment, or --output.")

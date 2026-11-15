@@ -127,7 +127,8 @@ struct HeadingCollection {
     /// Returns `root` with an `id` and anchor link added to every raw HTML heading, using
     /// `rawAnchors` in order. The markup matches Markdown headings: `<hN … id="slug"><a
     /// class="anchor" aria-hidden="true" href="#slug"></a>`. A heading that already has an `id`
-    /// (prefixed `user-content-` by the sanitizer) keeps it, and the slug goes on the anchor link.
+    /// (prefixed `user-content-` by the sanitizer) keeps it, and the slug goes on the anchor link,
+    /// unless that `id` is the slug itself.
     func anchoringRawHeadings(in root: MarkdownNode) -> MarkdownNode {
         guard !rawAnchors.isEmpty else {
             return root
@@ -160,8 +161,11 @@ struct HeadingCollection {
             }
             output.append(contentsOf: scalars[copied..<tagEnd])
             let slug = escapedAttribute(anchor.slug)
+            // A heading whose own `id` already is the slug (a custom processor's, #106) needs
+            // no second element with that id.
+            let ownID = tag.attributes.first { $0.name == "id" }?.value.map { AttributeValue($0).decoded }
             let headingID = anchor.hasID ? "" : " id=\"\(slug)\""
-            let linkID = anchor.hasID ? " id=\"\(slug)\"" : ""
+            let linkID = anchor.hasID && ownID != anchor.slug ? " id=\"\(slug)\"" : ""
             let markup = "\(headingID)><a\(linkID) class=\"anchor\" aria-hidden=\"true\" href=\"#\(slug)\"></a>"
             output.append(contentsOf: markup.unicodeScalars)
             copied = tagEnd + 1

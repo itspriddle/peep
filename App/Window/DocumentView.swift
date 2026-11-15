@@ -20,8 +20,15 @@ struct DocumentView: View {
             .frame(minWidth: 480, minHeight: 360)
             .safeAreaInset(edge: .top, spacing: 0) { FileStatusBanner(status: document.fileStatus) }
             .safeAreaInset(edge: .top, spacing: 0) {
-                if let error = document.content?.preprocessorError {
-                    PreprocessorFailureBar(error: error)
+                // One inset for both programs' bars (#57, #106): another inset here kept closed
+                // windows' documents alive (`StressTests.closeShownWindows`).
+                VStack(spacing: 0) {
+                    if let error = document.content?.preprocessorError {
+                        CustomProgramFailureBar(error: error)
+                    }
+                    if let error = document.content?.processorError {
+                        CustomProgramFailureBar(error: error)
+                    }
                 }
             }
             .safeAreaInset(edge: .top, spacing: 0) {

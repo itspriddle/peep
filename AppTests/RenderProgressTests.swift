@@ -31,7 +31,7 @@ final class RenderProgressTests: DocumentWindowTestCase {
     /// (none unless given), without waiting for anything.
     func openWindow(
         _ source: String, name: String = "notes.md", progress: RenderProgress,
-        customPreprocessorSettings: CustomPreprocessorSettings? = nil, outlineVisible: Bool = false
+        customPreprocessorSettings: CustomProgramSettings? = nil, outlineVisible: Bool = false
     ) throws -> (MarkdownDocument, DocumentWindowController) {
         let file = folder.appending(path: name)
         try Data(source.utf8).write(to: file)

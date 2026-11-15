@@ -63,13 +63,20 @@ enum DocumentPasteboard {
     /// page around it. No `data-source-line` annotations, and remote images are kept as written
     /// (the viewer's placeholders are display only; nothing is loaded by copying). Wiki links
     /// resolve from `documentURL` like the window's (#53), to paths relative to the document.
+    /// With `processedHTML` (the custom processor's output for `source`'s body, #106) the body is
+    /// that HTML, sanitized, as `peep --html --processor` writes it.
     nonisolated static func copyableHTML(
-        for source: String, preferences: MarkdownPreferences = .default, documentURL: URL? = nil
+        for source: String, processedHTML: String? = nil, preferences: MarkdownPreferences = .default,
+        documentURL: URL? = nil
     ) -> String {
         var options = RenderOptions()
         preferences.apply(to: &options)
         let resolver = DocumentWikiLinks.resolver(
             forDocumentAt: documentURL, linkRoot: DocumentContent.linkRoot(forDocumentAt: documentURL))
-        return HTMLRenderer(options: options, wikiLinkResolver: resolver).render(source).html
+        let renderer = HTMLRenderer(options: options, wikiLinkResolver: resolver)
+        guard let processedHTML else {
+            return renderer.render(source).html
+        }
+        return renderer.render(processedHTML: processedHTML, of: renderer.prepare(source)).html
     }
 }

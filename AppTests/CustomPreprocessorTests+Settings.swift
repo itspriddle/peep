@@ -18,13 +18,13 @@ extension CustomPreprocessorTests {
         #expect(store.preference == nil)
         #expect(store.lastRun == nil)
         for key in [
-            CustomPreprocessorSettings.enabledKey, CustomPreprocessorSettings.executableKey,
-            CustomPreprocessorSettings.argumentsKey,
+            CustomProgramSettings.Keys.preprocessor.enabled, CustomProgramSettings.Keys.preprocessor.executable,
+            CustomProgramSettings.Keys.preprocessor.arguments,
         ] {
             #expect(defaults.object(forKey: key) == nil)
         }
         // The app's own store (in memory in hosted tests) is off too, and so are new documents.
-        #expect(CustomPreprocessorSettings.shared.preference == nil)
+        #expect(CustomProgramSettings.preprocessor.preference == nil)
         #expect(MarkdownDocument().renderPreferences.customPreprocessor == nil)
     }
 
@@ -36,7 +36,7 @@ extension CustomPreprocessorTests {
         store.arguments = ["--a", "two words"]
         store.isEnabled = true
         #expect(
-            store.preference == CustomPreprocessorPreference(executablePath: path, arguments: ["--a", "two words"]))
+            store.preference == CustomProgramPreference(executablePath: path, arguments: ["--a", "two words"]))
 
         let reread = self.store()
         #expect(reread.isEnabled)
@@ -45,9 +45,9 @@ extension CustomPreprocessorTests {
 
         store.reset()
         #expect(store.preference == nil)
-        #expect(defaults.object(forKey: CustomPreprocessorSettings.enabledKey) == nil)
-        #expect(defaults.object(forKey: CustomPreprocessorSettings.executableKey) == nil)
-        #expect(defaults.object(forKey: CustomPreprocessorSettings.argumentsKey) == nil)
+        #expect(defaults.object(forKey: CustomProgramSettings.Keys.preprocessor.enabled) == nil)
+        #expect(defaults.object(forKey: CustomProgramSettings.Keys.preprocessor.executable) == nil)
+        #expect(defaults.object(forKey: CustomProgramSettings.Keys.preprocessor.arguments) == nil)
     }
 
     @Test("stored values are untrusted: on only with an absolute executable")
@@ -55,16 +55,16 @@ extension CustomPreprocessorTests {
         let store = store()
         store.isEnabled = true
         #expect(!store.isEnabled, "no executable: stays off")
-        #expect(defaults.object(forKey: CustomPreprocessorSettings.enabledKey) == nil)
+        #expect(defaults.object(forKey: CustomProgramSettings.Keys.preprocessor.enabled) == nil)
 
-        defaults.set(true, forKey: CustomPreprocessorSettings.enabledKey)
-        defaults.set("bin/script", forKey: CustomPreprocessorSettings.executableKey)
+        defaults.set(true, forKey: CustomProgramSettings.Keys.preprocessor.enabled)
+        defaults.set("bin/script", forKey: CustomProgramSettings.Keys.preprocessor.executable)
         #expect(store.executablePath == nil)
         #expect(!store.isEnabled)
         #expect(store.preference == nil)
 
         store.executablePath = "relative/script"
-        #expect(defaults.string(forKey: CustomPreprocessorSettings.executableKey) == "bin/script", "ignored")
+        #expect(defaults.string(forKey: CustomProgramSettings.Keys.preprocessor.executable) == "bin/script", "ignored")
     }
 
     @Test("in memory under UI tests, never touching the defaults")
@@ -73,8 +73,8 @@ extension CustomPreprocessorTests {
         store.executablePath = try scripts.upcase()
         store.isEnabled = true
         #expect(store.isEnabled)
-        #expect(defaults.object(forKey: CustomPreprocessorSettings.enabledKey) == nil)
-        #expect(defaults.object(forKey: CustomPreprocessorSettings.executableKey) == nil)
+        #expect(defaults.object(forKey: CustomProgramSettings.Keys.preprocessor.enabled) == nil)
+        #expect(defaults.object(forKey: CustomProgramSettings.Keys.preprocessor.executable) == nil)
     }
 
     // MARK: Settings model
@@ -82,7 +82,7 @@ extension CustomPreprocessorTests {
     @Test("turning it on needs the warning's Turn On; Cancel keeps it off")
     func enableNeedsWarning() throws {
         let store = store()
-        let model = CustomPreprocessorModel(settings: store) { nil }
+        let model = CustomProgramModel(settings: store) { nil }
         model.setEnabled(true)
         #expect(!model.isConfirmingEnable, "no program yet: nothing to turn on")
 
@@ -109,7 +109,7 @@ extension CustomPreprocessorTests {
         let notExecutable = folder.appending(path: "plain.txt")
         try Data("text".utf8).write(to: notExecutable)
         var choice: URL? = notExecutable
-        let model = CustomPreprocessorModel(settings: store) { choice }
+        let model = CustomProgramModel(settings: store) { choice }
 
         await model.chooseExecutable()
         #expect(store.executablePath == nil)
@@ -143,7 +143,7 @@ extension CustomPreprocessorTests {
     @Test("arguments are kept verbatim; empty ones are dropped")
     func arguments() throws {
         let store = store()
-        let model = CustomPreprocessorModel(settings: store) { nil }
+        let model = CustomProgramModel(settings: store) { nil }
         model.setArguments(["--to", "", "two words", "$HOME", "*"])
         #expect(store.arguments == ["--to", "two words", "$HOME", "*"])
         #expect(model.arguments == store.arguments)
@@ -152,7 +152,7 @@ extension CustomPreprocessorTests {
     @Test("the Settings model includes the section's model")
     func settingsModel() throws {
         let store = store()
-        let section = CustomPreprocessorModel(settings: store) { nil }
+        let section = CustomProgramModel(settings: store) { nil }
         let viewer = DefaultViewer(
             workspace: FakeWorkspace(), defaults: defaults, applicationURL: URL(filePath: "/Applications/Peep.app"),
             bundleIdentifier: "now.peep.Peep", isSuppressed: true)

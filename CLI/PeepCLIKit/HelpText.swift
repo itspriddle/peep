@@ -44,6 +44,9 @@ public enum HelpText {
         Example(
             command: "peep --html --preprocessor ~/bin/expand --preprocessor-arg -v notes.md",
             explanation: "Run ~/bin/expand -v on the Markdown first and render what it prints."),
+        Example(
+            command: "peep --html --processor /opt/homebrew/bin/pandoc --processor-arg -f --processor-arg gfm notes.md",
+            explanation: "Render the Markdown with pandoc instead of Peep, in a Peep page with its HTML sanitized."),
     ]
 
     /// `PeepCommand`'s help discussion: the overview, the example commands, and the exit statuses.

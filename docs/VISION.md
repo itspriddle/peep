@@ -67,6 +67,23 @@ editor or a browser.
      them: alerts (#52), wiki links (#53), emoji shortcodes.
   6. **HTML:** sanitize raw HTML, collect headings and anchors, highlight code, write markup.
 
+  **Custom processor (#106, opt-in, off by default)** replaces stages 4-6: the body after the
+  frontmatter goes to the user's own renderer (pandoc, markdown-it, comrak, …;
+  `SourceProcessor`, `CustomProcessor`), which writes an HTML fragment. Stages 1-3 still run
+  (`HTMLRenderer.prepare(_:)`): the preprocessor first, the frontmatter table is Peep's, and
+  `peep.theme` applies. `HTMLRenderer.render(processedHTML:of:)` then **always sanitizes** the
+  fragment, whatever `RenderOptions.sanitize` says, with `HTMLSanitizerMode.processorOutput`:
+  the raw-HTML allowlist plus `class` (minus the names Peep's markup and scripts use:
+  `markdown-body`, `remote-image*`, `peep-*`), task-list checkboxes (always `disabled`),
+  `section`, and `id`/`name` without the `user-content-` prefix. Script, style, `svg`, `math`,
+  event handlers, inline styles, and URL schemes stay as strict as for raw HTML, and remote
+  images follow the remote image policy. Headings, slugs, and anchors are collected from the
+  sanitized HTML (a heading's own `id` is kept), so the outline and in-page links work. What
+  belongs to Peep's renderer doesn't apply: the flavor and `peep.flavor` (except for the word
+  count, of the body as Peep parses it), alerts, wiki links, emoji, highlight.js, and
+  `data-source-line`, so headings have no source line, an outline click scrolls by slug, and
+  the outline doesn't track the current section.
+
   Built-in syntax features ("built-in preprocessors" such as wiki links, and emoji and alerts)
   are AST transforms, not text passes over the source: they rewrite only text nodes the parser
   produced, so code spans, code blocks, raw HTML, and link destinations are never rewritten,
@@ -581,6 +598,11 @@ editor or a browser.
     the signal, so Peep dies of it as shells expect. A signal Peep started out ignoring (`nohup`,
     background jobs) stays ignored. Only installed around the run, so reading standard input
     is still interrupted the default way.
+  - Custom processor (#106, `ProcessorOptions`, help section "Processor"): `--processor PATH`
+    and repeatable `--processor-arg ARG`, with `--preprocessor`'s rules (`CustomProgramCommand`
+    runs both): only a named program runs, HTML output only, a failure exits 70 with the
+    stderr tail (no fallback to Peep's renderer), and Ctrl-C stops it. It runs after
+    `--preprocessor`, on the body after the frontmatter.
   - CLI to app (#67, `WorkspaceAppOpener`, `AppOpenEvent` in PeepCore, `DocumentOpener` in the
     app): `peep FILE` checks every path first (missing, folder, unreadable: exit 66, nothing
     opens; relative paths resolve against the shell's folder) and `--theme` (`ThemeResolver`,
@@ -828,8 +850,9 @@ editor or a browser.
   no generic mapping from frontmatter keys to `RenderOptions`; `RenderOptions.applying(_:)`
   changes the flavor (and #53's wiki links toggle) and nothing else, so sanitizing, the remote
   image policy, `linkRoot`, source lines, and every other setting stay as the reader's app set
-  them. The custom preprocessor isn't a render option at all: it is configured only in Settings
-  (or named by `peep --html --preprocessor`) and runs before frontmatter is read. Any other key
+  them. The custom preprocessor and processor aren't render options at all: they are configured
+  only in Settings (or named by `peep --html --preprocessor` / `--processor`), and the
+  preprocessor runs before frontmatter is read. Any other key
   under `peep:` (`sanitize`, `remoteImages`, `preprocessor`, ...) is ignored and reported;
   unregistered flavors (such as the spec suite's) can't be chosen; a theme id is only looked up
   in the registry, never read as a path. Tests (`DocumentOverridesSecurityTests`) render a
@@ -838,7 +861,7 @@ editor or a browser.
   first stage of the render pipeline (#51), so their output is still parsed, transformed, and
   sanitized like any file.
   - **Opt-in (#57):** off by default. Settings > Markdown > Custom preprocessor is the only
-    way to turn it on (`CustomPreprocessorSettings`): the program is chosen with an Open panel
+    way to turn it on (`CustomProgramSettings.preprocessor`): the program is chosen with an Open panel
     (never a typed path; links are kept as chosen, not resolved) and stored as an absolute path,
     a choice that isn't an executable file is refused with the reason, and the toggle turns it
     on only after a warning that Peep will run that program on every document it opens, as the
@@ -853,7 +876,7 @@ editor or a browser.
     a file through unchanged). The file must still be UTF-8 (the open fails otherwise, as
     without a preprocessor), and the script gets its exact bytes. `peep --html` runs one only
     when `--preprocessor PATH` names it (#66; the CLI bullets under Architecture).
-  - **Failures render the document without it, plus a bar** (`PreprocessorFailureBar`), never an
+  - **Failures render the document without it, plus a bar** (`CustomProgramFailureBar`), never an
     alert and never an error page: "Preprocessor failed", the reason (`PreprocessorError.message`),
     and a Show Details disclosure with the stderr tail, shown verbatim. A program that was
     deleted or lost its execute bit is such a failure, not a silent unprocessed render. When
@@ -919,6 +942,19 @@ editor or a browser.
   - **Not a sandbox:** the script runs as the user, with the user's file access. A process that
     leaves the group (`setsid`) is out of reach, though Peep stops reading its pipes after the
     grace period. Opting in means trusting the executable.
+- **The custom processor (#106)** is opted into and runs exactly like the preprocessor: the
+  same runner, contract, environment, working directory, limits, and failure handling, with
+  its own store (`CustomProgramSettings.processor`, Settings > Markdown > Custom processor,
+  its own warning; `-PeepUITestProcessor` in Debug UI tests only). The two are independent.
+  What differs: its input is the body after the frontmatter, and its output is HTML, which is
+  untrusted like a document's raw HTML: it is always sanitized
+  (`HTMLSanitizerMode.processorOutput`, see the render pipeline), and the CSP and disabled page
+  JavaScript stay the backstop. The allowlist's additions are inert markup (`class`, a
+  disabled checkbox, `section`); a processor's ids aren't prefixed because there are no
+  generated ids to collide with, and only app scripts run, in their own content world. A
+  failure renders the document with Peep's renderer plus a "Processor failed" bar; Copy as
+  HTML copies the same sanitized output. Frontmatter can't turn it on
+  (`CustomProcessorTests.frontmatterCantEnable`, `DocumentOverridesSecurityTests.noProcessor`).
 - **Install Command Line Tool (#70)** writes outside the app, sometimes as root, so it follows
   narrow rules (`CommandLineToolInstaller`, unit tested over temp folders):
   - It only ever creates, replaces, or removes a symbolic link named `peep` whose absolute
