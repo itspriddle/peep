@@ -54,6 +54,8 @@ targets:
         # SUAllowsInsecureUpdates and no installer XPC keys (not sandboxed). SUEnableAutomaticChecks
         # is left unset on purpose: Sparkle asks on the second launch whether to check
         # automatically, and Settings > General changes it later.
+        # Quick Look's App Group (QuickLookConfigurationPublisher); see PEEP_APP_GROUP.
+        PeepAppGroup: $(PEEP_APP_GROUP)
         SUFeedURL: https://peep.now/appcast.xml
         SUPublicEDKey: $(SPARKLE_PUBLIC_ED_KEY)
         SUVerifyUpdateBeforeExtraction: true
@@ -109,6 +111,9 @@ targets:
       path: App/Peep.entitlements
       properties:
         com.apple.security.app-sandbox: false
+        # Quick Look's settings, shared with its extension (valid without the sandbox).
+        com.apple.security.application-groups:
+          - $(PEEP_APP_GROUP)
     settings:
       base:
         PRODUCT_NAME: Peep
@@ -127,6 +132,10 @@ targets:
         copy:
           destination: wrapper
           subpath: Contents/Helpers
+      # Quick Look (Contents/PlugIns): the preview extension.
+      - target: PeepQuickLook
+        embed: true
+        codeSign: true
     # A Release build must carry the real Sparkle public key (#81): the placeholder in
     # Config/Shared.xcconfig, or anything that isn't a base64 Ed25519 key, fails it. Debug only
     # warns (its updater is off unless asked for; see App/Updates/SoftwareUpdates.swift).
@@ -186,6 +195,45 @@ targets:
     dependencies:
       - package: peep
         product: PeepCLIKit
+
+  # Quick Look's preview (space bar, Finder's preview pane): a data-based preview, the rendered
+  # page as HTML (QuickLookPreview). Sandboxed; reads the previewed file and the App Group only.
+  PeepQuickLook:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Extensions/Preview
+        excludes:
+          - "*.entitlements"
+    info:
+      path: Extensions/Preview/Info.plist
+      properties:
+        CFBundleDisplayName: Peep Quick Look
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        PeepAppGroup: $(PEEP_APP_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.quicklook.preview
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PreviewProvider
+          NSExtensionAttributes:
+            QLIsDataBasedPreview: true
+            QLSupportsSearchableItems: false
+            QLSupportedContentTypes:
+              - net.daringfireball.markdown
+              - $(PRODUCT_BUNDLE_IDENTIFIER_BASE).markdown
+    settings:
+      base:
+        PRODUCT_NAME: PeepQuickLook
+        PRODUCT_BUNDLE_IDENTIFIER: $(PRODUCT_BUNDLE_IDENTIFIER_BASE).quicklook
+        CODE_SIGN_ENTITLEMENTS: Extensions/Preview/Preview.entitlements
+        ENABLE_APP_SANDBOX: YES
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+    dependencies:
+      - package: peep
+        product: PeepCore
+      - sdk: QuickLookUI.framework
+      - sdk: UniformTypeIdentifiers.framework
 
   AppTests:
     type: bundle.unit-test

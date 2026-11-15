@@ -20,6 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// Sparkle (#81), or an inactive stand-in where updates are off (`SoftwareUpdates`): App menu
     /// > Check for Updates… and Settings > General's update rows.
     let updater: any SoftwareUpdating
+    /// Publishes Quick Look's settings to its extension; nil in tests and builds without an
+    /// App Group.
+    private(set) var quickLookPublisher: QuickLookConfigurationPublisher?
     /// The Settings window, created the first time it is shown and reused after.
     private var settingsWindowController: SettingsWindowController?
 
@@ -75,7 +78,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         // Sparkle schedules its first check itself (and asks about automatic checks on the second
         // launch); an inactive updater does nothing.
         updater.start()
+        startQuickLookPublisher()
         openUITestDocuments(UITestHooks.documentsToOpen[...])
+    }
+
+    /// Quick Look's settings (`QuickLookConfigurationPublisher`): never under tests, which must
+    /// not write the reader's App Group.
+    private func startQuickLookPublisher() {
+        guard !Self.isHostingUnitTests, !UITestHooks.isUITesting,
+            let store = QuickLookConfigurationPublisher.appGroupStore()
+        else {
+            return
+        }
+        let publisher = QuickLookConfigurationPublisher(
+            themeSettings: .shared, markdownSettings: .shared, themesFolder: customThemes?.folder, store: store)
+        publisher.start()
+        quickLookPublisher = publisher
     }
 
     /// Opens the UI test's documents one after another, so a repeated path finds the first open.

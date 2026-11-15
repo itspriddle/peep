@@ -8,6 +8,7 @@ import PeepCore
 /// | --- | --- | --- |
 /// | Appearance | `AppearanceSettings.mode` | the whole app, live |
 /// | Default theme | `ThemeSettings.defaultThemeID` | new windows |
+/// | Quick Look theme (Quick Look pane) | `ThemeSettings.quickLookThemeID` | Quick Look, via `QuickLookConfigurationPublisher` |
 /// | (Open Themes Folder) | `CustomThemeLibrary.openFolder()` (#35) | Finder |
 /// | Show outline in new windows | `OutlinePreference` | new windows |
 /// | Pin new windows | `WindowPinPreference` | new windows |
@@ -62,6 +63,8 @@ final class SettingsModel: NSObject {
     /// The id of the theme new windows use: the stored default, resolved in the registry (a
     /// deleted custom theme shows as the registry's default).
     private(set) var defaultThemeID = ""
+    /// Quick Look's theme id, or `quickLookFollowsDefault` (the picker's first item).
+    private(set) var quickLookThemeID = SettingsModel.quickLookFollowsDefault
     /// Custom theme files that didn't load, one line each ("Name: why").
     private(set) var themeFailures: [String] = []
     /// The zoom new windows start at, snapped to the nearest `PageZoom.levels` entry.
@@ -152,6 +155,9 @@ final class SettingsModel: NSObject {
         let registry = themeSettings.registry
         themeSections = registry.pickerSections()
         defaultThemeID = themeSettings.defaultTheme.id
+        quickLookThemeID =
+            themeSettings.quickLookThemeID.flatMap { registry.contains(id: $0) ? $0 : nil }
+            ?? Self.quickLookFollowsDefault
         themeFailures = themeSettings.customThemeFailures.map(\.message)
         zoomLevel = Self.nearestZoomLevel(to: zoomSettings.defaultLevel)
         contentWidth = contentWidthSettings.defaultWidth
@@ -187,6 +193,23 @@ final class SettingsModel: NSObject {
             return
         }
         themeSettings.defaultThemeID = id
+        refresh()
+    }
+
+    /// The Quick Look theme picker's tag for "Same as default theme". No theme id is empty.
+    static let quickLookFollowsDefault = ""
+
+    /// Quick Look shows the theme with `id`, or follows the default theme
+    /// (`quickLookFollowsDefault`). A document's `peep.theme` still wins.
+    func setQuickLookTheme(id: String) {
+        if id == Self.quickLookFollowsDefault {
+            themeSettings.quickLookThemeID = nil
+        } else {
+            guard themeSettings.registry.contains(id: id) else {
+                return
+            }
+            themeSettings.quickLookThemeID = id
+        }
         refresh()
     }
 

@@ -19,12 +19,13 @@ extension HTMLRenderer {
         return blocked
     }
 
-    /// The remote image `source` names, when `options.remoteImages` blocks it. Sources cmark's
+    /// The image `source` names, when `options.remoteImages` blocks it (remote, or any local one
+    /// under `.blockAll`). Sources cmark's
     /// safe mode blanks (`DangerousURL`, e.g. `file:`) aren't remote: they render as an empty
     /// `src`, as before.
     func blockedRemoteImage(_ source: String) -> RemoteImage? {
-        guard options.remoteImages != .keep, !DangerousURL.matches(source), let image = RemoteImage(source: source),
-            options.remoteImages.blocks(image)
+        guard options.remoteImages != .keep, !DangerousURL.matches(source),
+            let image = options.remoteImages.blockedImage(source: source)
         else {
             return nil
         }

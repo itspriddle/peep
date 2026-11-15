@@ -328,9 +328,7 @@ struct RawHTMLSanitizer {
         }
         switch tag.name {
         case "img":
-            guard let source = value(of: "src")?.decoded, let image = RemoteImage(source: source),
-                remoteImages.blocks(image)
-            else {
+            guard let source = value(of: "src")?.decoded, let image = remoteImages.blockedImage(source: source) else {
                 return nil
             }
             if !(isInPicture && pictureReportedBlockedImage) {
@@ -341,8 +339,8 @@ struct RawHTMLSanitizer {
                 height: value(of: "height")?.decoded)
         case "source":
             guard let srcset = value(of: "srcset")?.decoded,
-                let image = URLSchemePolicy.srcsetURLs(srcset).lazy.compactMap({ RemoteImage(source: $0) })
-                    .first(where: remoteImages.blocks)
+                let image = URLSchemePolicy.srcsetURLs(srcset).lazy.compactMap(remoteImages.blockedImage(source:))
+                    .first
             else {
                 return nil
             }

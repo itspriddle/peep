@@ -25,6 +25,10 @@ public struct ContentSecurityPolicy: Sendable, Equatable {
     public static let viewerAllowingRemoteImages = ContentSecurityPolicy(
         imageSources: viewer.imageSources + ["https:"])
 
+    /// Quick Look's preview: `data:` images only. Its sandbox can't read the document's folder,
+    /// so every other image is a placeholder already (`RemoteImagePolicy.blockAll`).
+    public static let quickLook = ContentSecurityPolicy(imageSources: ["data:"])
+
     /// The policy as a `<meta http-equiv="Content-Security-Policy">` value.
     public var header: String {
         "default-src 'none'; style-src 'unsafe-inline'; img-src \(imageSources.joined(separator: " "));"
