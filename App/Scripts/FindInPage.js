@@ -38,12 +38,19 @@
     return document.querySelector("article.markdown-body") ?? document.body;
   }
 
-  // Whether text directly inside `element` is rendered. Cached per element for one search.
+  // Collapsible sections (CollapsibleSections.js, same world): `peepSections`, if installed.
+  function sections() {
+    return globalThis.peepSections ?? null;
+  }
+
+  // Whether text directly inside `element` is rendered, or would be if its collapsed section
+  // were unfolded (selecting a match there unfolds it). Cached per element for one search.
   function isShown(element, cache) {
     let shown = cache.get(element);
     if (shown === undefined) {
       shown = element.closest(HIDDEN) === null
         && (typeof element.checkVisibility !== "function"
+          || sections()?.isFolded(element) === true
           || element.checkVisibility({ visibilityProperty: true }));
       cache.set(element, shown);
     }
@@ -157,9 +164,10 @@
     return matches.findIndex((range) => range.compareBoundaryPoints(Range.START_TO_START, anchor) >= 0);
   }
 
-  // Scrolls `range` into view: horizontally inside overflowing blocks (code, tables), then the
-  // page, centering it when it isn't already fully visible.
+  // Scrolls `range` into view, unfolding its collapsed section: horizontally inside overflowing
+  // blocks (code, tables), then the page, centering it when it isn't already fully visible.
   function reveal(range) {
+    sections()?.reveal(range.startContainer);
     let rect = range.getBoundingClientRect();
     for (let element = range.startContainer.parentElement; element !== null && element !== document.body;
       element = element.parentElement) {

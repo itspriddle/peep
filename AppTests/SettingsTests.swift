@@ -16,6 +16,7 @@ final class SettingsTests: DocumentWindowTestCase {
         appearanceSettings: AppearanceSettings? = nil, themeSettings: ThemeSettings? = nil,
         zoomSettings: ZoomSettings? = nil,
         contentWidthSettings: ContentWidthSettings? = nil, markdownSettings: MarkdownSettings? = nil,
+        collapsibleSectionsSettings: CollapsibleSectionsSettings? = nil,
         openThemesFolder: (@MainActor () -> Void)? = nil
     ) -> SettingsModel {
         workspace.setHandler("com.example.other")
@@ -27,6 +28,8 @@ final class SettingsTests: DocumentWindowTestCase {
             themeSettings: themeSettings ?? self.themeSettings(),
             zoomSettings: zoomSettings ?? settings(),
             contentWidthSettings: contentWidthSettings ?? ContentWidthSettings(defaults: defaults, isPersistent: true),
+            collapsibleSectionsSettings: collapsibleSectionsSettings
+                ?? CollapsibleSectionsSettings(defaults: defaults, isPersistent: true),
             outlinePreference: OutlinePreference(defaults: defaults, isPersistent: true),
             pinPreference: WindowPinPreference(defaults: defaults, isPersistent: true),
             markdownSettings: markdownSettings ?? MarkdownSettings(defaults: defaults, isPersistent: true),
@@ -93,6 +96,18 @@ final class SettingsTests: DocumentWindowTestCase {
 
         width.isCustomWidthEnabled = false
         #expect(!model.isCustomWidthEnabled, "follows changes to the store")
+    }
+
+    @Test("collapsible sections mirror their store and write through")
+    func collapsibleSections() {
+        let sections = CollapsibleSectionsSettings(defaults: defaults, isPersistent: true)
+        let model = model(collapsibleSectionsSettings: sections)
+        #expect(!model.collapsesSections)
+        model.setCollapsesSections(true)
+        #expect(sections.isEnabled)
+        #expect(model.collapsesSections)
+        sections.isEnabled = false
+        #expect(!model.collapsesSections, "follows changes to the store")
     }
 
     @Test("an unregistered theme id is ignored; a deleted default shows the registry default")

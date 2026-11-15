@@ -13,14 +13,20 @@
 (() => {
   const ATTRIBUTE = "data-source-line";
 
+  // Collapsible sections (CollapsibleSections.js, same world): `peepSections`, if installed.
+  function sections() {
+    return globalThis.peepSections ?? null;
+  }
+
   // Annotated blocks in document order. Lines never decrease before the footnotes section;
-  // footnote items defined earlier in the file would go back, so the list stops there.
+  // footnote items defined earlier in the file would go back, so the list stops there. Blocks
+  // in folded sections have no position (`display: none`), so they're skipped.
   function annotatedBlocks() {
     const blocks = [];
     let previous = 0;
     for (const element of document.querySelectorAll(`[${ATTRIBUTE}]`)) {
       const line = Number.parseInt(element.getAttribute(ATTRIBUTE), 10);
-      if (!Number.isFinite(line)) {
+      if (!Number.isFinite(line) || sections()?.isFolded(element) === true) {
         continue;
       }
       if (line < previous) {
@@ -84,9 +90,28 @@
     return currentSourceLine(offset);
   }
 
-  // Scrolls so `line` is at the top of the viewport. Lines before the first block scroll to
-  // the top of the page.
+  // Unfolds the section that hides the last block at or before `line`, if any.
+  function revealSourceLine(line) {
+    let target = null;
+    for (const element of document.querySelectorAll(`[${ATTRIBUTE}]`)) {
+      const elementLine = Number.parseInt(element.getAttribute(ATTRIBUTE), 10);
+      if (!Number.isFinite(elementLine)) {
+        continue;
+      }
+      if (elementLine > line) {
+        break;
+      }
+      target = element;
+    }
+    if (target !== null) {
+      sections()?.reveal(target);
+    }
+  }
+
+  // Scrolls so `line` is at the top of the viewport, unfolding its section. Lines before the
+  // first block scroll to the top of the page.
   function scrollToSourceLine(line) {
+    revealSourceLine(line);
     let lower = { line: 1, top: 0 };
     let upper = null;
     for (const block of annotatedBlocks()) {
@@ -118,6 +143,7 @@
     for (const id of ids) {
       const target = typeof id === "string" ? document.getElementById(id) : null;
       if (target !== null) {
+        sections()?.reveal(target);
         target.scrollIntoView({ block: "start" });
         return true;
       }
@@ -128,12 +154,15 @@
   // Replaces the rendered body and title of the loaded page in place, keeping the stylesheet
   // and scroll position. `html` is renderer output; parsing it here runs no script (scripts
   // inserted by innerHTML never execute, and page JavaScript is off for inline handlers).
+  // Collapsed sections stay collapsed (matched by heading).
   function replaceContent(html, title) {
     const article = document.querySelector("article.markdown-body");
     if (article === null) {
       return false;
     }
+    const collapsed = sections()?.capture() ?? [];
     article.innerHTML = html;
+    sections()?.restore(collapsed);
     document.title = title;
     return true;
   }

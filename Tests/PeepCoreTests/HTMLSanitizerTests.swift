@@ -46,6 +46,14 @@ struct HTMLSanitizerXSSTests {
         #expect(sanitized(#"<p style="color:red" onclick="x()">p</p>"#) == "<p>p</p>")
     }
 
+    @Test("data- attributes are removed, so a document can't fold or mark collapsible sections")
+    func dataAttributes() {
+        let input = #"<h2 data-peep-collapsed aria-expanded="false">h</h2><p data-peep-folded>p</p>"#
+        for mode in [HTMLSanitizerMode.rawHTML, .processorOutput] {
+            #expect(HTMLSanitizer(mode: mode).sanitize(fragment: input) == "<h2>h</h2><p>p</p>", "\(mode)")
+        }
+    }
+
     @Test("script-like elements are removed with their content")
     func droppedContent() {
         #expect(sanitized("a<script>alert(1)</script>b") == "ab")

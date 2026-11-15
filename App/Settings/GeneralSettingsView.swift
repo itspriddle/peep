@@ -8,7 +8,7 @@ import SwiftUI
 /// default theme, custom theme files that didn't load, and Open Themes
 /// Folder, #35), Windows (outline and pin defaults), Reading (the zoom and content width new windows
 /// start with; View > Zoom and View > Content Width change one window, #47; a custom width in
-/// px that, while on, every window uses instead), Default
+/// px that, while on, every window uses instead; collapsible sections, every window), Default
 /// Viewer, and Updates (Sparkle's automatic checks and downloads, #81).
 struct GeneralSettingsView: View {
     let model: SettingsModel
@@ -104,6 +104,14 @@ struct GeneralSettingsView: View {
                     "New windows open at this zoom and width. The View menu changes one window. "
                         + "A custom width (\(CustomContentWidth.range.lowerBound)–"
                         + "\(CustomContentWidth.range.upperBound) px of text) applies to every window.")
+                Toggle(
+                    "Click headings to collapse sections",
+                    isOn: binding(\.collapsesSections, model.setCollapsesSections)
+                )
+                .accessibilityIdentifier("settings-collapsible-sections")
+                note(
+                    "A heading folds everything up to the next heading of the same or a higher level. "
+                        + "View > Collapse All Sections and Expand All Sections fold the whole document.")
             }
 
             Section {

@@ -12,6 +12,8 @@
 /// - find highlights (`::highlight(peep-find)`, `::highlight(peep-find-current)`, #25), never
 ///   printed;
 /// - the blocked remote-image placeholder's visibility (#20) (its look is a default);
+/// - folded collapsible sections (`[data-peep-folded]`, the app's `CollapsibleSections.js`)
+///   staying hidden (the chevron's look is a default);
 
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
 /// - structural print rules (#26, #38): light color scheme, no page background, full width,
@@ -50,6 +52,22 @@ public enum ThemeBase {
         /* Wiki links (#53) to a missing page have no href, so themes style them as plain text
            (`a:not([href])`); a dashed underline keeps them distinguishable. */
         .wikilink-missing { border-bottom: 1px dashed; cursor: default; }
+        /* Collapsible sections (the app's CollapsibleSections.js, while Settings turns them on): a
+           folded block is hidden, and a top-level heading shows a chevron after its text on hover
+           or focus, and always while collapsed. Never set by documents (the sanitizer drops
+           `data-` attributes). */
+        [data-peep-folded] { display: none !important; }
+        [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6) { cursor: pointer; }
+        [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6)::after {
+          content: "\\25BE"; display: inline-block; margin-left: 0.4em; font-size: 0.6em;
+          font-weight: normal; vertical-align: middle; opacity: 0; color: currentColor;
+        }
+        [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6)[data-peep-collapsed]::after {
+          content: "\\25B8"; opacity: 0.6;
+        }
+        [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6):is(:hover, :focus-visible)::after {
+          opacity: 0.6;
+        }
         /* Find in page (the app's find bar): every match, and the current one. Never printed. */
         ::highlight(peep-find) { background-color: rgb(255 214 0 / 0.4) !important; }
         ::highlight(peep-find-current) { background-color: #ff9632 !important; color: #1f2328 !important; }
@@ -71,6 +89,7 @@ public enum ThemeBase {
           p { orphans: 3; widows: 3; }
           .markdown-body { max-width: none !important; padding: 0 !important; }
           .anchor { display: none !important; }
+          [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6)::after { content: none !important; }
           a[href^="http:"]::after, a[href^="https:"]::after {
             content: " (" attr(href) ")"; font-size: 0.8em; overflow-wrap: anywhere;
           }
