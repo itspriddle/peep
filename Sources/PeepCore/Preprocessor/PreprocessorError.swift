@@ -1,9 +1,10 @@
 import Darwin
 import Foundation
 
-/// Why a custom preprocessor run failed (#56): a reason, plus the tail of the script's stderr
-/// (at most `PreprocessorLimits.maximumErrorBytes`, decoded leniently), for the reader.
-/// Cancellation is not a `PreprocessorError`; it throws `CancellationError`.
+/// Why a custom program run failed (the preprocessor, #56, or the processor, #106: `kind`): a
+/// reason, plus the tail of the script's stderr (at most `PreprocessorLimits.maximumErrorBytes`,
+/// decoded leniently), for the reader. Cancellation is not a `PreprocessorError`; it throws
+/// `CancellationError`.
 public struct PreprocessorError: Error, Sendable, Equatable, CustomStringConvertible {
     public enum Reason: Sendable, Equatable {
         /// The document is larger than `maximumInputBytes`; nothing ran.
@@ -29,35 +30,44 @@ public struct PreprocessorError: Error, Sendable, Equatable, CustomStringConvert
     public let reason: Reason
     /// The end of the script's stderr; empty when it wrote none (or never ran).
     public let standardError: String
+    /// Which program failed, for the message ("\(program) …", "The processor …").
+    public let kind: CustomProgramKind
 
-    public init(_ reason: Reason, standardError: String = "") {
+    public init(_ reason: Reason, standardError: String = "", kind: CustomProgramKind = .preprocessor) {
         self.reason = reason
         self.standardError = standardError
+        self.kind = kind
+    }
+
+    /// This error, as `kind`'s.
+    public func attributed(to kind: CustomProgramKind) -> PreprocessorError {
+        PreprocessorError(reason, standardError: standardError, kind: kind)
     }
 
     /// One sentence for the reader, without the stderr tail.
     public var message: String {
-        switch reason {
+        let program = "The \(kind.noun)"
+        return switch reason {
         case .inputTooLarge(let limit):
-            "The document is larger than the preprocessor limit (\(Self.size(limit)))."
+            "The document is larger than the \(kind.noun) limit (\(Self.size(limit)))."
         case .executableUnavailable(let problem):
-            "The preprocessor can’t run: \(problem)"
+            "\(program) can’t run: \(problem)"
         case .launchFailed(let code) where code == EPERM || code == EACCES:
-            "The preprocessor couldn’t start: \(String(cString: strerror(code))). \(Self.blockedLaunchHint)"
+            "\(program) couldn’t start: \(String(cString: strerror(code))). \(Self.blockedLaunchHint)"
         case .launchFailed(let code):
-            "The preprocessor couldn’t start: \(String(cString: strerror(code)))."
+            "\(program) couldn’t start: \(String(cString: strerror(code)))."
         case .timedOut(let timeout):
-            "The preprocessor didn’t finish within \(Self.seconds(timeout))."
+            "\(program) didn’t finish within \(Self.seconds(timeout))."
         case .outputTooLarge(let limit):
-            "The preprocessor wrote more than \(Self.size(limit))."
+            "\(program) wrote more than \(Self.size(limit))."
         case .exited(let status):
-            "The preprocessor exited with status \(status)."
+            "\(program) exited with status \(status)."
         case .signaled(let signal):
-            "The preprocessor was stopped by signal \(signal) (\(Self.signalName(signal)))."
+            "\(program) was stopped by signal \(signal) (\(Self.signalName(signal)))."
         case .outputNotUTF8:
-            "The preprocessor’s output isn’t UTF-8 text."
+            "\(program)’s output isn’t UTF-8 text."
         case .outputContainsNUL:
-            "The preprocessor’s output contains a NUL byte."
+            "\(program)’s output contains a NUL byte."
         }
     }
 

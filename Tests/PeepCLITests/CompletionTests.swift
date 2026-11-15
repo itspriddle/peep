@@ -23,7 +23,7 @@ struct CompletionTests {
         }
     }
 
-    @Test("FILE, --output, and --preprocessor complete file names", arguments: shells)
+    @Test("FILE, --output, --preprocessor, and --processor complete file names", arguments: shells)
     func files(shell: CompletionShell) throws {
         let script = try CompletionScript.script(for: shell)
         let lines = script.components(separatedBy: "\n")
@@ -32,13 +32,15 @@ struct CompletionTests {
             #expect(lines.contains { $0.contains("'*:FILE:_files'") })
             #expect(lines.contains { $0.contains("--output}'[") && $0.hasSuffix(":FILE:_files'") })
             #expect(lines.contains { $0.contains("'--preprocessor[") && $0.hasSuffix(":PATH:_files'") })
+            #expect(lines.contains { $0.contains("'--processor[") && $0.hasSuffix(":PATH:_files'") })
         case .bash:
-            // The positional case, --output's, and --preprocessor's.
-            #expect(lines.filter { $0.contains("__peep_add_completions -f") }.count == 3)
+            // The positional case, --output's, --preprocessor's, and --processor's.
+            #expect(lines.filter { $0.contains("__peep_add_completions -f") }.count == 4)
         default:
             #expect(lines.contains { $0.hasSuffix("-ge 1' -F") })
             #expect(lines.contains { $0.contains("-l 'output'") && $0.hasSuffix(" -rF") })
             #expect(lines.contains { $0.contains("-l 'preprocessor'") && $0.hasSuffix(" -rF") })
+            #expect(lines.contains { $0.contains("-l 'processor'") && $0.hasSuffix(" -rF") })
         }
     }
 

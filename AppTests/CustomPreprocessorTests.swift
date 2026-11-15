@@ -14,11 +14,11 @@ import Testing
 final class CustomPreprocessorTests: DocumentWindowTestCase {
     var scripts: PreprocessorScripts { PreprocessorScripts(folder: folder) }
 
-    func store(isPersistent: Bool = true) -> CustomPreprocessorSettings {
-        CustomPreprocessorSettings(defaults: defaults, isPersistent: isPersistent)
+    func store(isPersistent: Bool = true) -> CustomProgramSettings {
+        CustomProgramSettings(defaults: defaults, isPersistent: isPersistent)
     }
 
-    func store(running executable: String, arguments: [String] = []) -> CustomPreprocessorSettings {
+    func store(running executable: String, arguments: [String] = []) -> CustomProgramSettings {
         PreprocessorScripts.settings(running: executable, arguments: arguments, defaults: defaults)
     }
 
@@ -181,7 +181,7 @@ final class CustomPreprocessorTests: DocumentWindowTestCase {
         #expect(document.content?.preferences.customPreprocessor == nil)
         #expect(document.content?.preprocessorError == nil)
         #expect(!FileManager.default.fileExists(atPath: marker.path(percentEncoded: false)))
-        #expect(!CustomPreprocessorSettings.shared.isEnabled)
-        #expect(CustomPreprocessorSettings.shared.executablePath == nil)
+        #expect(!CustomProgramSettings.preprocessor.isEnabled)
+        #expect(CustomProgramSettings.preprocessor.executablePath == nil)
     }
 }

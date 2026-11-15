@@ -60,7 +60,8 @@ class DocumentWindowTestCase {
     func open(
         _ source: String = source, name: String = "notes.md", zoomSettings: ZoomSettings? = nil,
         contentWidthSettings: ContentWidthSettings? = nil, themeSettings: ThemeSettings? = nil,
-        markdownSettings: MarkdownSettings? = nil, customPreprocessorSettings: CustomPreprocessorSettings? = nil,
+        markdownSettings: MarkdownSettings? = nil, customPreprocessorSettings: CustomProgramSettings? = nil,
+        customProcessorSettings: CustomProgramSettings? = nil,
         statusBarPreference: StatusBarPreference? = nil, pinPreference: WindowPinPreference? = nil,
         appearance: NSAppearance.Name? = nil
     ) async throws -> (MarkdownDocument, DocumentWindowController) {
@@ -72,6 +73,9 @@ class DocumentWindowTestCase {
         }
         if let customPreprocessorSettings {
             document.customPreprocessorSettings = customPreprocessorSettings
+        }
+        if let customProcessorSettings {
+            document.customProcessorSettings = customProcessorSettings
         }
         let controller = DocumentWindowController(
             statusBarPreference: statusBarPreference ?? StatusBarPreference(defaults: defaults, isPersistent: true),

@@ -28,12 +28,15 @@ extension DocumentWindowController {
             return
         }
         // What the window shows: the Markdown its page was rendered from (the custom
-        // preprocessor's output, #57) and the preferences it was rendered with.
+        // preprocessor's output, #57), the custom processor's HTML for it (#106), and the
+        // preferences it was rendered with.
         let source = content.renderedSource
+        let processedHTML = content.processedHTML
         let preferences = content.preferences
         let documentURL = markdownDocument?.fileURL
         let html = await Task.detached(priority: .userInitiated) {
-            DocumentPasteboard.copyableHTML(for: source, preferences: preferences, documentURL: documentURL)
+            DocumentPasteboard.copyableHTML(
+                for: source, processedHTML: processedHTML, preferences: preferences, documentURL: documentURL)
         }.value
         DocumentPasteboard.writeHTML(html, to: pasteboard)
     }

@@ -10,8 +10,15 @@ struct DocumentContent: Equatable, Sendable {
     /// `source`. Copy as HTML renders it again.
     let renderedSource: String
     /// Why the custom preprocessor failed, when it did: the pages are then `source` rendered
-    /// without it, and the window shows a bar with the reason (`PreprocessorFailureBar`).
+    /// without it, and the window shows a bar with the reason (`CustomProgramFailureBar`).
     let preprocessorError: PreprocessorError?
+    /// The custom processor's HTML for the body of `renderedSource` (#106), unsanitized as it
+    /// wrote it; `nil` when no processor ran or it failed. The pages are built from it (each
+    /// sanitizes it, `HTMLRenderer.render(processedHTML:of:)`), and Copy as HTML uses it.
+    let processedHTML: String?
+    /// Why the custom processor failed, when it did: the pages are then Peep's own render, and
+    /// the window shows a bar with the reason (`CustomProgramFailureBar`).
+    let processorError: PreprocessorError?
     /// The page with remote images blocked (placeholders, `.viewer` CSP): what every window
     /// shows until the user opts in (#20).
     let page: RenderedPage
@@ -34,38 +41,39 @@ struct DocumentContent: Equatable, Sendable {
     /// turn them on, are resolved now, from `documentURL`'s folder and `linkRoot`
     /// (`DocumentWikiLinks`); without a `documentURL` every page link is missing.
     ///
-    /// This never runs the custom preprocessor (`preferences.customPreprocessor`); that is
-    /// asynchronous, in `rendering(_:of:preferences:)`.
+    /// This never runs a custom program (`preferences.customPreprocessor`, `customProcessor`);
+    /// that is asynchronous, in `rendering(_:of:preferences:)`.
     init(
         source: String, fallbackTitle: String, linkRoot: String? = nil, preferences: MarkdownPreferences = .default,
         documentURL: URL? = nil
     ) {
         self.init(
-            source: source, renderedSource: source, preprocessorError: nil, fallbackTitle: fallbackTitle,
-            linkRoot: linkRoot, preferences: preferences, documentURL: documentURL)
+            source: source, renderedSource: source, preprocessorError: nil, processedHTML: nil, processorError: nil,
+            fallbackTitle: fallbackTitle, linkRoot: linkRoot, preferences: preferences, documentURL: documentURL)
     }
 
     /// Renders `renderedSource` (the custom preprocessor's output, or `source`) as the content of
-    /// a file whose text is `source`.
+    /// a file whose text is `source`, its body from `processedHTML` (the custom processor's
+    /// output) when there is one.
     init(
-        source: String, renderedSource: String, preprocessorError: PreprocessorError?, fallbackTitle: String,
+        source: String, renderedSource: String, preprocessorError: PreprocessorError?,
+        processedHTML: String? = nil, processorError: PreprocessorError? = nil, fallbackTitle: String,
         linkRoot: String?, preferences: MarkdownPreferences, documentURL: URL?
     ) {
         self.source = source
         self.renderedSource = renderedSource
         self.preprocessorError = preprocessorError
+        self.processedHTML = processedHTML
+        self.processorError = processorError
         self.preferences = preferences
         let options = Self.renderOptions(preferences: preferences, linkRoot: linkRoot)
         let resolver = DocumentWikiLinks.resolver(forDocumentAt: documentURL, linkRoot: linkRoot)
-        let page = Self.render(
-            renderedSource, fallbackTitle: fallbackTitle, options: options, resolver: resolver,
-            allowingRemoteImages: false)
+        let input = PageInput(markdown: renderedSource, processedHTML: processedHTML, fallbackTitle: fallbackTitle)
+        let page = Self.render(input, options: options, resolver: resolver, allowingRemoteImages: false)
         self.page = page
         remoteImagesPage =
             page.blockedRemoteImages.contains(where: \.isHTTPS)
-            ? Self.render(
-                renderedSource, fallbackTitle: fallbackTitle, options: options, resolver: resolver,
-                allowingRemoteImages: true)
+            ? Self.render(input, options: options, resolver: resolver, allowingRemoteImages: true)
             : nil
     }
 
@@ -81,15 +89,28 @@ struct DocumentContent: Equatable, Sendable {
         allowingRemoteImages ? remoteImagesPage ?? page : page
     }
 
+    /// What a page is rendered from: the Markdown, the custom processor's HTML for its body when
+    /// there is one (#106), and the title for a document without one.
+    private struct PageInput {
+        let markdown: String
+        let processedHTML: String?
+        let fallbackTitle: String
+    }
+
+    /// One page: the Markdown through Peep's renderer, or, with `processedHTML`, its frontmatter
+    /// and overrides plus the processor's sanitized HTML.
     private static func render(
-        _ source: String, fallbackTitle: String, options: RenderOptions, resolver: (any WikiLinkResolver)?,
-        allowingRemoteImages: Bool
+        _ input: PageInput, options: RenderOptions, resolver: (any WikiLinkResolver)?, allowingRemoteImages: Bool
     ) -> RenderedPage {
         var options = options
         options.remoteImages = allowingRemoteImages ? .allowHTTPS : .block
+        let renderer = HTMLRenderer(options: options, wikiLinkResolver: resolver)
+        let rendered =
+            input.processedHTML.map { renderer.render(processedHTML: $0, of: renderer.prepare(input.markdown)) }
+            ?? renderer.render(input.markdown)
         return RenderedPage(
-            rendered: HTMLRenderer(options: options, wikiLinkResolver: resolver).render(source),
-            fallbackTitle: fallbackTitle,
+            rendered: rendered,
+            fallbackTitle: input.fallbackTitle,
             contentSecurityPolicy: allowingRemoteImages ? .viewerAllowingRemoteImages : .viewer)
     }
 

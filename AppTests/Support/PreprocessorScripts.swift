@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import PeepCore
 import Testing
 
 @testable import PeepApp
@@ -40,6 +41,18 @@ struct PreprocessorScripts {
             for argument in "$@"; do printf 'arg:%s\\n' "$argument"; done
             printf 'path:%s\\n' "$PEEP_DOCUMENT_PATH"
             printf '```\\n'
+            """)
+    }
+
+    /// A custom processor (#106): a heading, then the body escaped in a `<pre>`, then a script
+    /// the sanitizer must remove.
+    func htmlProcessor() throws -> String {
+        try write(
+            "html-processor.sh",
+            """
+            printf '<h1>Processed</h1>\n<h2>Second Part</h2>\n<pre class="body">'
+            sed -e 's/&/\\&amp;/g' -e 's/</\\&lt;/g'
+            printf '</pre>\n<script>document.title = "pwned"</script>\n'
             """)
     }
 
@@ -130,12 +143,13 @@ struct PreprocessorScripts {
         return Int(max(count, 0))
     }
 
-    /// An in-memory store with the preprocessor on, running `executable`.
+    /// An in-memory store with the `kind` program on, running `executable`.
     @MainActor
     static func settings(
-        running executable: String, arguments: [String] = [], defaults: UserDefaults
-    ) -> CustomPreprocessorSettings {
-        let settings = CustomPreprocessorSettings(defaults: defaults, isPersistent: false)
+        _ kind: CustomProgramKind = .preprocessor, running executable: String, arguments: [String] = [],
+        defaults: UserDefaults
+    ) -> CustomProgramSettings {
+        let settings = CustomProgramSettings(kind: kind, defaults: defaults, isPersistent: false)
         settings.executablePath = executable
         settings.arguments = arguments
         settings.isEnabled = true

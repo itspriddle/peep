@@ -14,13 +14,13 @@ public enum ExitStatus {
     public static let noInput: Int32 = 66
     /// The app couldn't be opened.
     public static let unavailable: Int32 = 69
-    /// The `--preprocessor` program couldn't run or failed (#66).
+    /// The `--preprocessor` or `--processor` program couldn't run or failed (#66, #106).
     public static let software: Int32 = 70
     /// The `--output` file couldn't be written.
     public static let cannotCreate: Int32 = 73
     /// Writing to standard output failed.
     public static let ioError: Int32 = 74
-    /// A `--preprocessor` run was cancelled by a signal that didn't then end the process
+    /// A `--preprocessor` or `--processor` run was cancelled by a signal that didn't then end the process
     /// (128 + `SIGINT`, as shells report it). Normally the signal itself ends Peep.
     public static let interrupted: Int32 = 130
 
@@ -47,13 +47,13 @@ public enum ExitStatus {
             meaning: "an input file is missing or unreadable, standard input for a window is empty, "
                 + "or the --theme file is missing"),
         Entry(status: unavailable, meaning: "the app couldn't be opened"),
-        Entry(status: software, meaning: "the --preprocessor program couldn't run or failed"),
+        Entry(status: software, meaning: "the --preprocessor or --processor program couldn't run or failed"),
         Entry(status: cannotCreate, meaning: "the --output file couldn't be written"),
         Entry(status: ioError, meaning: "writing to standard output failed"),
     ]
 
     /// What happens on Ctrl-C (`interrupted`), after the list.
-    public static let interruptNote = "Ctrl-C during a --preprocessor run stops the program, then Peep."
+    public static let interruptNote = "Ctrl-C during a --preprocessor or --processor run stops the program, then Peep."
 
     /// The exit status section of `peep --help`: `entries`, wrapped to 74 columns.
     static var help: String {

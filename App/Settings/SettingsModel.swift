@@ -18,7 +18,8 @@ import PeepCore
 /// | Default flavor | `MarkdownSettings.defaultFlavorID` | every document, live (#55) |
 /// | Frontmatter display | `MarkdownSettings.frontmatterDisplay` | every document, live (#55) |
 /// | Built-in preprocessors | `MarkdownSettings.builtInPreprocessors` | every document, live (#55) |
-/// | Custom preprocessor | `CustomPreprocessorSettings`, via `customPreprocessor` | every document, live (#57) |
+/// | Custom preprocessor | `CustomProgramSettings.preprocessor`, via `customPreprocessor` | every document, live (#57) |
+/// | Custom processor | `CustomProgramSettings.processor`, via `customProcessor` | every document, live (#106) |
 /// | Automatic update checks and downloads | Sparkle's updater, via `updater` (`SoftwareUpdating`) | the app (#81) |
 ///
 /// Every store takes an injectable `UserDefaults` suite and is in memory under UI tests, so
@@ -46,7 +47,9 @@ final class SettingsModel: NSObject {
     /// so a model built without one never touches the reader's settings or the network.
     @ObservationIgnored let updater: any SoftwareUpdating
     /// Settings > Markdown > Custom preprocessor (#57), with its own model and store.
-    @ObservationIgnored let customPreprocessor: CustomPreprocessorModel
+    @ObservationIgnored let customPreprocessor: CustomProgramModel
+    /// Settings > Markdown > Custom processor (#106), with its own model and store.
+    @ObservationIgnored let customProcessor: CustomProgramModel
     /// Opens the custom themes folder (#35, the same action as View > Theme > Open Themes
     /// Folder); nil where custom themes are off (hosted tests, UI tests without a folder).
     @ObservationIgnored let openThemesFolderAction: (@MainActor () -> Void)?
@@ -94,12 +97,14 @@ final class SettingsModel: NSObject {
         outlinePreference: OutlinePreference = OutlinePreference(),
         pinPreference: WindowPinPreference = WindowPinPreference(),
         markdownSettings: MarkdownSettings = .shared,
-        customPreprocessor: CustomPreprocessorModel? = nil,
+        customPreprocessor: CustomProgramModel? = nil,
+        customProcessor: CustomProgramModel? = nil,
         updater: (any SoftwareUpdating)? = nil,
         defaultViewerOffer: DefaultViewerOfferController,
         openThemesFolder: (@MainActor () -> Void)? = nil
     ) {
-        self.customPreprocessor = customPreprocessor ?? CustomPreprocessorModel()
+        self.customPreprocessor = customPreprocessor ?? CustomProgramModel(settings: .preprocessor)
+        self.customProcessor = customProcessor ?? CustomProgramModel(settings: .processor)
         self.appearanceSettings = appearanceSettings
         self.themeSettings = themeSettings
         self.zoomSettings = zoomSettings
@@ -151,6 +156,7 @@ final class SettingsModel: NSObject {
         frontmatterDisplay = markdownSettings.frontmatterDisplay
         builtInPreprocessors = markdownSettings.builtInPreprocessors
         customPreprocessor.refresh()
+        customProcessor.refresh()
         isUpdaterActive = updater.isActive
         automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
         automaticallyDownloadsUpdates = updater.automaticallyDownloadsUpdates

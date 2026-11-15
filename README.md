@@ -65,7 +65,7 @@ peep:
   says. `[[Page Name]]` opens `Page-Name.md` (or `Page Name.md`, any case), looked for in the
   document's folder, then anywhere in its repository (or folder).
 - **What a document can't do:** these are the only keys. A document is untrusted input, so it
-  can only choose among presentation options. It can't turn on the custom preprocessor, turn
+  can only choose among presentation options. It can't turn on the custom preprocessor or processor, turn
   off HTML sanitizing, load remote images, or change any other safety setting. Other keys and
   values of the wrong type are ignored (and reported to the renderer, never shown as an error).
 - Only YAML frontmatter (`---`) is read. TOML frontmatter (`+++`) is detected and hidden but not
@@ -95,6 +95,29 @@ preprocessor: choose the program with Choose... and add any arguments, one per f
   `PEEP_DOCUMENT_PATH`. The limits are the app's. If it fails, Peep prints the reason and what it
   wrote to standard error, prints no HTML, and exits 70. Ctrl-C stops it (and anything it
   started) before Peep exits.
+
+## Custom processor
+
+Peep can also hand rendering to another Markdown renderer, such as pandoc, markdown-it, or
+comrak, and show its HTML in the Peep window, with your theme, the outline, and live reload. It
+is off by default. Turn it on in Settings > Markdown > Custom processor, the same way as the
+preprocessor.
+
+- The program gets the Markdown after the frontmatter on standard input and writes HTML (a
+  fragment, not a whole page) to standard output. Peep still reads the frontmatter: its `title`
+  and `peep.theme` apply, and Settings can show it as a table. It runs after the custom
+  preprocessor when both are on, with the same environment, limits, and trust: it runs as you, on
+  every document you open, so only use a program you trust.
+- Its HTML is always sanitized, like raw HTML in a document, with class names, task-list
+  checkboxes, and its own heading ids also kept. Scripts, styles, and remote content are removed
+  or blocked as usual.
+- Peep's own Markdown features don't apply to its output: flavors, GitHub alerts, wiki links,
+  emoji shortcodes, and code highlighting. The outline lists its headings, but doesn't follow
+  your place in the document.
+- If it fails, the window shows the document as Peep renders it, with a bar giving the reason.
+- On the command line: `peep --html --processor /opt/homebrew/bin/pandoc --processor-arg -f
+  --processor-arg gfm notes.md`. The rules are `--preprocessor`'s: a file path, only when you ask,
+  and exit status 70 with the reason if it fails.
 
 ## Command line
 
@@ -165,7 +188,7 @@ peep --fragment intro.md usage.md > body.html   # body HTML only, for embedding
 | 65 | An input isn't valid UTF-8, standard input is over 10 MB for a window, or the `--theme` file isn't a valid theme |
 | 66 | An input file is missing or unreadable, standard input for a window is empty, or the `--theme` file is missing |
 | 69 | The app couldn't be opened |
-| 70 | The `--preprocessor` program couldn't run or failed |
+| 70 | The `--preprocessor` or `--processor` program couldn't run or failed |
 | 73 | The `--output` file couldn't be written |
 | 74 | Writing to standard output failed |
 

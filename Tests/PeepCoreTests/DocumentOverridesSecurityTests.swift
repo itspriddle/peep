@@ -151,6 +151,24 @@ struct DocumentOverridesSecurityTests {
         #expect(rendered.html.contains("body"))
     }
 
+    @Test("frontmatter can't turn on a custom processor: the built-in renderer runs, nothing is executed")
+    func noProcessor() throws {
+        let marker = FileManager.default.temporaryDirectory.appending(path: "peep-override-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: marker) }
+        let source = """
+            ---
+            peep:
+              processor: /usr/bin/touch
+              customProcessor: { executable: /usr/bin/touch, arguments: ["\(marker.path)"] }
+            ---
+            # body
+            """
+        let rendered = HTMLRenderer(options: Self.viewerOptions).render(source)
+        #expect(!FileManager.default.fileExists(atPath: marker.path))
+        #expect(rendered.overrides.ignored.map(\.reason) == [.unknownKey, .unknownKey])
+        #expect(rendered.headings.first?.sourceLine == 6)
+    }
+
     @Test("top-level keys that look like settings are ordinary metadata, not overrides")
     func topLevel() {
         let rendered = Self.render("---\n\(Self.hostileSettings)\n---\n\(Self.hostileBody)\n")

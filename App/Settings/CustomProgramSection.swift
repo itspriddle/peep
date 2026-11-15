@@ -1,24 +1,23 @@
 import PeepCore
 import SwiftUI
 
-/// Settings > Markdown > Custom preprocessor (#57), the pane's last section: the on/off toggle
-/// (behind a warning), the program (chosen with an Open panel, never typed), its arguments as a
-/// list, the last run in this session, and Reset. Identifiers (`settings-custom-preprocessor*`)
-/// are for UI tests.
-struct CustomPreprocessorSection: View {
-    @Bindable var model: CustomPreprocessorModel
+/// Settings > Markdown > Custom preprocessor (#57) and Custom processor (#106), the pane's last
+/// sections, one per `model.kind`: the on/off toggle (behind a warning), the program (chosen
+/// with an Open panel, never typed), its arguments as a list, the last run in this session, and
+/// Reset. Identifiers (`settings-custom-preprocessor*`, `settings-custom-processor*`) are for UI
+/// tests.
+struct CustomProgramSection: View {
+    @Bindable var model: CustomProgramModel
 
     var body: some View {
-        Section("Custom preprocessor") {
+        Section(model.kind.sectionTitle) {
             Toggle(
-                "Run a custom preprocessor",
+                model.kind.toggleLabel,
                 isOn: Binding(get: { model.isEnabled }, set: { model.setEnabled($0) })
             )
             .disabled(model.executablePath == nil)
-            .accessibilityIdentifier("settings-custom-preprocessor")
-            note(
-                "Runs a program on every document before it's rendered: the document on standard input, "
-                    + "Markdown on standard output. Choose a program first.")
+            .accessibilityIdentifier(identifierPrefix)
+            note(model.kind.settingsNote)
 
             LabeledContent("Program:") {
                 VStack(alignment: .leading, spacing: 4) {
@@ -28,24 +27,25 @@ struct CustomPreprocessorSection: View {
                             .truncationMode(.middle)
                             .foregroundStyle(model.executablePath == nil ? .secondary : .primary)
                             .help(model.executablePath ?? "")
-                            .accessibilityIdentifier("settings-custom-preprocessor-path")
+                            .accessibilityIdentifier("\(identifierPrefix)-path")
                         Button("Choose…") {
                             Task { await model.chooseExecutable() }
                         }
-                        .accessibilityIdentifier("settings-custom-preprocessor-choose")
+                        .accessibilityIdentifier("\(identifierPrefix)-choose")
                     }
                     if let problem = model.rejectedChoice ?? model.executableProblem {
                         Text(verbatim: problem)
                             .font(.callout)
                             .foregroundStyle(.red)
                             .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("settings-custom-preprocessor-problem")
+                            .accessibilityIdentifier("\(identifierPrefix)-problem")
                     }
                 }
             }
 
             LabeledContent("Arguments:") {
-                ArgumentListEditor(arguments: model.arguments, commit: model.setArguments)
+                ArgumentListEditor(
+                    arguments: model.arguments, commit: model.setArguments, identifierPrefix: identifierPrefix)
             }
 
             LabeledContent("Last run:") {
@@ -53,30 +53,32 @@ struct CustomPreprocessorSection: View {
                     .foregroundStyle(model.lastRun?.error == nil ? .secondary : .primary)
                     .lineLimit(3)
                     .textSelection(.enabled)
-                    .accessibilityIdentifier("settings-custom-preprocessor-last-run")
+                    .accessibilityIdentifier("\(identifierPrefix)-last-run")
             }
 
             Button("Reset") {
                 model.reset()
             }
             .disabled(model.executablePath == nil && model.arguments.isEmpty && !model.isEnabled)
-            .accessibilityIdentifier("settings-custom-preprocessor-reset")
+            .accessibilityIdentifier("\(identifierPrefix)-reset")
         }
         .alert("Run a program on every document?", isPresented: $model.isConfirmingEnable) {
             Button("Turn On") { model.confirmEnable() }
-                .accessibilityIdentifier("settings-custom-preprocessor-confirm")
+                .accessibilityIdentifier("\(identifierPrefix)-confirm")
             Button("Cancel", role: .cancel) { model.cancelEnable() }
         } message: {
             Text(verbatim: warning)
         }
     }
 
-    /// The warning before turning the preprocessor on.
+    /// `settings-custom-preprocessor`, `settings-custom-processor`.
+    private var identifierPrefix: String {
+        "settings-custom-\(model.kind.noun)"
+    }
+
+    /// The warning before turning the program on.
     private var warning: String {
-        let name = model.executableName.map { "“\($0)”" } ?? "the program"
-        return "Peep will run \(name) on every document you open, as you, with access to everything you can "
-            + "access. Each document's text is sent to it. Documents can't turn it on or choose another program. "
-            + "Only turn this on for a program you trust."
+        model.kind.enableWarning(programName: model.executableName.map { "“\($0)”" } ?? "the program")
     }
 
     private var lastRunText: String {
@@ -98,12 +100,13 @@ struct CustomPreprocessorSection: View {
     }
 }
 
-/// The preprocessor's arguments, one field each, passed verbatim (no shell, no splitting).
+/// A custom program's arguments, one field each, passed verbatim (no shell, no splitting).
 /// Edits are committed on Return and when a field loses focus, so a half-typed argument
 /// doesn't re-render every open document on each keystroke; empty fields are dropped.
 private struct ArgumentListEditor: View {
     let arguments: [String]
     let commit: ([String]) -> Void
+    let identifierPrefix: String
 
     private struct Row: Identifiable {
         let id = UUID()
@@ -123,7 +126,7 @@ private struct ArgumentListEditor: View {
                         .font(.system(.body, design: .monospaced))
                         .focused($focusedRow, equals: row.id)
                         .onSubmit(commitRows)
-                        .accessibilityIdentifier("settings-custom-preprocessor-argument-\(index + 1)")
+                        .accessibilityIdentifier("\(identifierPrefix)-argument-\(index + 1)")
                     Button {
                         rows.removeAll { $0.id == row.id }
                         commitRows()
@@ -140,12 +143,12 @@ private struct ArgumentListEditor: View {
                 rows.append(row)
                 focusedRow = row.id
             }
-            .accessibilityIdentifier("settings-custom-preprocessor-add-argument")
+            .accessibilityIdentifier("\(identifierPrefix)-add-argument")
         }
         .onAppear { rows = arguments.map { Row(text: $0) } }
         .onChange(of: arguments) { _, newValue in
             // A change from elsewhere (Reset); the editor's own commits already match.
-            if CustomPreprocessorModel.committed(rows.map(\.text)) != newValue {
+            if CustomProgramModel.committed(rows.map(\.text)) != newValue {
                 rows = newValue.map { Row(text: $0) }
             }
         }

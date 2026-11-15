@@ -12,7 +12,7 @@ import PeepCore
 /// - EXIT STATUS: `ExitStatus.entries` in place of the generator's generic sentence.
 /// - EXAMPLES: `HelpText.examples`.
 /// - SECURITY CONSIDERATIONS: what the CLI does and doesn't do with an untrusted document, and
-///   what `--preprocessor` runs (`PreprocessorLimits.standard`).
+///   what `--preprocessor` and `--processor` run (`PreprocessorLimits.standard`).
 ///
 /// ArgumentParser lists its implicit `help` subcommand; Peep has no subcommands, so the SYNOPSIS
 /// placeholder and the list entry are removed.
@@ -26,7 +26,7 @@ public enum ManualPage {
     /// (`ThemeResolver.themesFolder(environment:)` without `PEEP_THEMES_FOLDER`).
     static let themesFolderDisplayPath = "~/Library/Application Support/Peep/Themes"
 
-    /// The preprocessor's document path variable (PeepCore's `PreprocessorEnvironment`).
+    /// The custom programs' document path variable (PeepCore's `PreprocessorEnvironment`).
     static let documentPathVariable = "PEEP_DOCUMENT_PATH"
 
     /// `generated` (a `peep.1` from `generate-manual`) with Peep's sections.
@@ -149,6 +149,9 @@ public enum ManualPage {
                 + "a minimal environment with the document's path in \(documentPathVariable), and the "
                 + "document's folder as its working directory (/ for standard input). It is stopped "
                 + "after \(seconds) seconds, and an input or output over \(megabytes) MB fails the run.",
+            "--processor runs the same way, with the same limits, and gets the Markdown after its "
+                + "frontmatter. Its output replaces Peep's renderer and is always sanitized like raw HTML, "
+                + "with class names and disabled task-list checkboxes also allowed.",
         ]
         return paragraphs.map(text).joined(separator: "\n.Pp\n").components(separatedBy: "\n")
     }

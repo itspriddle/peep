@@ -15,33 +15,43 @@ extension HTMLRenderer {
     /// 6. HTML: sanitize raw HTML, collect headings and anchors, highlight code, write markup.
     ///    The word count (`WordCount`) reads the same transformed body.
     public func render(_ markdown: String) -> RenderedDocument {
-        let extracted = options.detectsFrontmatter ? Frontmatter.extract(from: markdown) : nil
-        let frontmatter = extracted?.frontmatter
-        let body = extracted.map { String($0.body) } ?? markdown
-
-        let overrides =
-            options.appliesDocumentOverrides ? DocumentOverrides(frontmatter: frontmatter) : DocumentOverrides.none
-        var renderer = self
-        renderer.options = options.applying(overrides)
-
-        let tree = MarkdownParser(extensions: renderer.options.flavor.extensions)
-            .parse(body, lineOffset: frontmatter?.lineCount ?? 0)
+        let prepared = prepare(markdown)
+        let renderer = prepared.renderer(from: self)
+        let tree = MarkdownParser(extensions: prepared.options.flavor.extensions)
+            .parse(prepared.body, lineOffset: prepared.lineOffset)
         let document = renderer.transformed(tree, source: markdown)
 
         var output = HTMLOutput(capacity: markdown.utf8.count + markdown.utf8.count / 4)
-        if let frontmatter, options.frontmatterDisplay == .table {
+        if let frontmatter = prepared.frontmatter, options.frontmatterDisplay == .table {
             FrontmatterHTML.render(frontmatter, into: &output)
         }
         let (headings, blockedRemoteImages) = renderer.render(document, into: &output)
         return RenderedDocument(
             html: output.string,
-            title: Self.title(frontmatter: frontmatter, headings: headings),
+            title: Self.title(frontmatter: prepared.frontmatter, headings: headings),
             headings: headings,
-            frontmatter: frontmatter,
+            frontmatter: prepared.frontmatter,
             blockedRemoteImages: blockedRemoteImages,
-            overrides: overrides,
-            flavor: renderer.options.flavor,
+            overrides: prepared.overrides,
+            flavor: prepared.options.flavor,
             wordCount: WordCount.count(in: document)
+        )
+    }
+
+    /// Stages 2 and 3 of the pipeline: the frontmatter (`options.detectsFrontmatter`) and the
+    /// document overrides it applies (#54), leaving the body for the built-in renderer or a
+    /// custom processor (#106, `render(processedHTML:of:)`).
+    public func prepare(_ markdown: String) -> PreparedSource {
+        let extracted = options.detectsFrontmatter ? Frontmatter.extract(from: markdown) : nil
+        let frontmatter = extracted?.frontmatter
+        let overrides =
+            options.appliesDocumentOverrides ? DocumentOverrides(frontmatter: frontmatter) : DocumentOverrides.none
+        return PreparedSource(
+            frontmatter: frontmatter,
+            overrides: overrides,
+            options: options.applying(overrides),
+            body: extracted.map { String($0.body) } ?? markdown,
+            lineOffset: frontmatter?.lineCount ?? 0
         )
     }
 
@@ -58,7 +68,7 @@ extension HTMLRenderer {
     /// collected so heading text and slugs see their result.
     /// `source` is the text the tree's source ranges refer to (wiki links check their brackets
     /// against it); `nil` for a tree parsed elsewhere.
-    fileprivate func transformed(_ node: MarkdownNode, source: String? = nil) -> MarkdownNode {
+    func transformed(_ node: MarkdownNode, source: String? = nil) -> MarkdownNode {
         MarkdownTransform.apply(
             to: node, context: TransformContext(options: options, source: source, wikiLinkResolver: wikiLinkResolver))
     }
@@ -66,5 +76,27 @@ extension HTMLRenderer {
     /// The document title: frontmatter `title` first, then the first non-empty `h1`.
     static func title(frontmatter: Frontmatter?, headings: [Heading]) -> String? {
         frontmatter?.title ?? headings.first { $0.level == 1 && !$0.text.isEmpty }?.text
+    }
+}
+
+/// A document after stages 2 and 3 of the pipeline (`HTMLRenderer.prepare(_:)`): what the
+/// built-in renderer parses, or a custom processor gets (#106).
+public struct PreparedSource: Sendable, Equatable {
+    /// The frontmatter, when `RenderOptions.detectsFrontmatter` found one.
+    public var frontmatter: Frontmatter?
+    /// The frontmatter's `peep:` overrides.
+    public var overrides: DocumentOverrides
+    /// The render's options with the overrides applied (`RenderOptions.applying(_:)`).
+    public var options: RenderOptions
+    /// The Markdown after the frontmatter.
+    public var body: String
+    /// How many lines the frontmatter took, so body lines map to file lines.
+    public var lineOffset: Int
+
+    /// `renderer` with these options.
+    func renderer(from renderer: HTMLRenderer) -> HTMLRenderer {
+        var renderer = renderer
+        renderer.options = options
+        return renderer
     }
 }

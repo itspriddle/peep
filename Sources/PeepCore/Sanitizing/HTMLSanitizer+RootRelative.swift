@@ -3,19 +3,19 @@
 /// re-written percent-encoded, like Markdown URLs.
 extension HTMLSanitizer {
     /// The sanitizer `HTMLRenderer` uses for `options` (`remoteImages`, `linkRoot`).
-    init(for options: RenderOptions) {
-        self.init(remoteImages: options.remoteImages, linkRoot: options.linkRoot)
+    init(for options: RenderOptions, mode: HTMLSanitizerMode = .rawHTML) {
+        self.init(remoteImages: options.remoteImages, linkRoot: options.linkRoot, mode: mode)
     }
 
     func makeRawSanitizer() -> RawHTMLSanitizer {
-        RawHTMLSanitizer(remoteImages: remoteImages, linkRoot: linkRoot)
+        RawHTMLSanitizer(remoteImages: remoteImages, linkRoot: linkRoot, mode: mode)
     }
 }
 
 extension RawHTMLSanitizer {
     /// A fresh sanitizer with the same settings (nothing open, nothing dropped).
     func restarted() -> RawHTMLSanitizer {
-        RawHTMLSanitizer(remoteImages: remoteImages, linkRoot: linkRoot)
+        RawHTMLSanitizer(remoteImages: remoteImages, linkRoot: linkRoot, mode: mode)
     }
 
     /// URL attributes whose root-relative values resolve against `linkRoot`.

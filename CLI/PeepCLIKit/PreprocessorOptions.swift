@@ -47,51 +47,8 @@ public struct PreprocessorOptions: ParsableArguments, Sendable {
     /// stderr; nothing is rendered unprocessed.
     func preprocess(_ document: InputDocument, in environment: CLIEnvironment) async throws(CLIError) -> String {
         guard let executable else { return document.markdown }
-        let subject = document.source.displayName
-        let preprocessor: CustomPreprocessor
-        do throws(PreprocessorExecutableError) {
-            let configuration = try PreprocessorConfiguration(
-                executablePath: Self.absolutePath(executable),
-                arguments: arguments,
-                limits: environment.preprocessorLimits)
-            preprocessor = CustomPreprocessor(configuration: configuration)
-        } catch {
-            throw Self.failure(subject, PreprocessorError(.executableUnavailable(error)))
-        }
-
-        let input = Data(document.markdown.utf8)
-        let documentURL = document.source.url
-        let run: @Sendable () async throws -> String = {
-            try await preprocessor.run(input: input, documentURL: documentURL)
-        }
-        do {
-            return environment.cancelsOnInterrupt ? try await InterruptCancellation.run(run) : try await run()
-        } catch let error as PreprocessorError {
-            throw Self.failure(subject, error)
-        } catch {
-            // Cancelled. With live signal handling the signal has already ended the process.
-            throw CLIError("\(subject): the preprocessor was interrupted", status: ExitStatus.interrupted)
-        }
-    }
-
-    /// `path` made absolute against the working directory. It's a path, never a command name.
-    static func absolutePath(_ path: String) -> String {
-        URL(fileURLWithPath: path).absoluteURL.path(percentEncoded: false)
-    }
-
-    /// `peep: <input>: <reason>`, then the program's stderr tail on the following lines, with
-    /// control characters other than tabs and newlines escaped (it may echo the document).
-    static func failure(_ subject: String, _ error: PreprocessorError) -> CLIError {
-        var message = "\(subject): \(error.message)"
-        let tail = error.standardError.trimmingCharacters(in: .newlines)
-        if !tail.isEmpty {
-            let lines = tail.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).map { line in
-                line.split(separator: "\t", omittingEmptySubsequences: false)
-                    .map { RenderFlagOptions.terminalSafe(String($0)) }
-                    .joined(separator: "\t")
-            }
-            message += "\n" + lines.joined(separator: "\n")
-        }
-        return CLIError(message, status: ExitStatus.software)
+        return try await CustomProgramCommand.run(
+            CustomProgramCommand.Program(kind: .preprocessor, executable: executable, arguments: arguments),
+            input: document.markdown, for: document, in: environment)
     }
 }

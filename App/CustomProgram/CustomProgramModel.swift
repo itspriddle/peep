@@ -1,20 +1,21 @@
 import AppKit
 import PeepCore
 
-/// What Settings > Markdown > Custom preprocessor (#57) shows and changes, over
-/// `CustomPreprocessorSettings`. Part of `SettingsModel` (`customPreprocessor`).
+/// What Settings > Markdown > Custom preprocessor (#57) or Custom processor (#106) shows and
+/// changes, over `CustomProgramSettings`. Part of `SettingsModel` (`customPreprocessor`,
+/// `customProcessor`).
 ///
-/// Turning the preprocessor on always goes through the warning: `setEnabled(true)` only shows
+/// Turning the program on always goes through the warning: `setEnabled(true)` only shows
 /// it (`isConfirmingEnable`), and `confirmEnable()`, the warning's "Turn On" button, is what
 /// turns it on. The executable comes only from an Open panel (`chooseExecutable()`), and a
 /// choice that isn't a usable executable is refused with the reason.
 @MainActor
 @Observable
-final class CustomPreprocessorModel: NSObject {
+final class CustomProgramModel: NSObject {
     /// Asks the reader for a file; `nil` when they cancel. Tests pass their own.
     typealias FileChooser = @MainActor () async -> URL?
 
-    @ObservationIgnored let settings: CustomPreprocessorSettings
+    @ObservationIgnored let settings: CustomProgramSettings
     @ObservationIgnored private let chooseFile: FileChooser
 
     private(set) var isEnabled = false
@@ -25,22 +26,23 @@ final class CustomPreprocessorModel: NSObject {
     private(set) var executableProblem: String?
     /// Why the last Open panel choice was refused; cleared by the next choice or a reset.
     private(set) var rejectedChoice: String?
-    private(set) var lastRun: CustomPreprocessorRun?
-    /// Whether the warning before turning the preprocessor on is showing. The alert's binding
+    private(set) var lastRun: CustomProgramRun?
+    /// Whether the warning before turning the program on is showing. The alert's binding
     /// sets it back to `false` when it closes.
     var isConfirmingEnable = false
 
-    init(settings: CustomPreprocessorSettings = .shared, chooseFile: FileChooser? = nil) {
+    init(settings: CustomProgramSettings = .preprocessor, chooseFile: FileChooser? = nil) {
         self.settings = settings
-        self.chooseFile = chooseFile ?? Self.runOpenPanel
+        let message = settings.kind.openPanelMessage
+        self.chooseFile = chooseFile ?? { await Self.runOpenPanel(message: message) }
         super.init()
         refresh()
         let center = NotificationCenter.default
         let selector = #selector(settingsDidChange(_:))
         center.addObserver(
-            self, selector: selector, name: CustomPreprocessorSettings.didChangeNotification, object: settings)
+            self, selector: selector, name: CustomProgramSettings.didChangeNotification, object: settings)
         center.addObserver(
-            self, selector: selector, name: CustomPreprocessorSettings.lastRunDidChangeNotification, object: settings)
+            self, selector: selector, name: CustomProgramSettings.lastRunDidChangeNotification, object: settings)
     }
 
     @objc private func settingsDidChange(_ notification: Notification) {
@@ -63,6 +65,11 @@ final class CustomPreprocessorModel: NSObject {
         }
     }
 
+    /// Which program this is.
+    var kind: CustomProgramKind {
+        settings.kind
+    }
+
     /// The program's file name, for display.
     var executableName: String? {
         executablePath.map { URL(filePath: $0).lastPathComponent }
@@ -71,7 +78,7 @@ final class CustomPreprocessorModel: NSObject {
     // MARK: Changes
 
     /// Turning on shows the warning (`isConfirmingEnable`); turning off is immediate. Open
-    /// documents render again without the preprocessor.
+    /// documents render again without the program.
     func setEnabled(_ enabled: Bool) {
         if enabled {
             guard !isEnabled, executablePath != nil else {
@@ -84,14 +91,14 @@ final class CustomPreprocessorModel: NSObject {
         }
     }
 
-    /// The warning's "Turn On": open documents render again through the preprocessor.
+    /// The warning's "Turn On": open documents render again through the program.
     func confirmEnable() {
         isConfirmingEnable = false
         settings.isEnabled = true
         refresh()
     }
 
-    /// The warning's "Cancel": the preprocessor stays off.
+    /// The warning's "Cancel": the program stays off.
     func cancelEnable() {
         isConfirmingEnable = false
     }
@@ -105,7 +112,7 @@ final class CustomPreprocessorModel: NSObject {
     }
 
     /// Uses the file at `url` (from the Open panel) as the executable if it is one; otherwise
-    /// keeps the current one and says why (`rejectedChoice`). When the preprocessor is on, open
+    /// keeps the current one and says why (`rejectedChoice`). When the program is on, open
     /// documents render again with the new program.
     func useExecutable(at url: URL) {
         let path = url.path(percentEncoded: false)
@@ -119,14 +126,14 @@ final class CustomPreprocessorModel: NSObject {
         refresh()
     }
 
-    /// Sets the arguments, dropping empty ones. When the preprocessor is on, open documents
+    /// Sets the arguments, dropping empty ones. When the program is on, open documents
     /// render again.
     func setArguments(_ arguments: [String]) {
         settings.arguments = Self.committed(arguments)
         refresh()
     }
 
-    /// Turns the preprocessor off and forgets the program and its arguments.
+    /// Turns the program off and forgets the program and its arguments.
     func reset() {
         rejectedChoice = nil
         settings.reset()
@@ -141,14 +148,14 @@ final class CustomPreprocessorModel: NSObject {
     /// An Open panel for one file, as a sheet on the key window (Settings). Links are kept as
     /// chosen, not resolved, so a Homebrew link (`/opt/homebrew/bin/x`) keeps working after an
     /// upgrade moves its target.
-    private static func runOpenPanel() async -> URL? {
+    private static func runOpenPanel(message: String) async -> URL? {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         panel.resolvesAliases = false
         panel.treatsFilePackagesAsDirectories = true
-        panel.message = "Choose the program Peep runs on each document before rendering it."
+        panel.message = message
         panel.prompt = "Choose"
         let response: NSApplication.ModalResponse
         if let window = NSApp.keyWindow {

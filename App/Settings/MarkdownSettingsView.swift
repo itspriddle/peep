@@ -11,7 +11,8 @@ import SwiftUI
 /// - Frontmatter: hidden or shown as a table.
 /// - Built-in preprocessors: one toggle per `MarkdownSettings.optionalPreprocessors` entry
 ///   (wiki links, #53), with its note; hidden while the list is empty.
-/// - Custom preprocessor (#57): `CustomPreprocessorSection`, last, below the built-in ones.
+/// - Custom preprocessor (#57) and Custom processor (#106): a `CustomProgramSection` each, last,
+///   below the built-in ones.
 struct MarkdownSettingsView: View {
     let model: SettingsModel
 
@@ -47,7 +48,8 @@ struct MarkdownSettingsView: View {
                 }
             }
 
-            CustomPreprocessorSection(model: model.customPreprocessor)
+            CustomProgramSection(model: model.customPreprocessor)
+            CustomProgramSection(model: model.customProcessor)
         }
         .formStyle(.columns)
         .padding(20)
