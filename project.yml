@@ -18,6 +18,8 @@ packages:
   # https://github.com/sparkle-project/Sparkle/releases before bumping. Its command line tools
   # (generate_keys, sign_update, generate_appcast) land in
   # build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin after `make build`.
+  # Package.swift declares the same version so `swift test` keeps the shared Package.resolved
+  # pin; bump both together.
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     exactVersion: 2.10.1

@@ -17,6 +17,9 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-cmark.git", from: "0.9.0"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.8.2"),
         .package(url: "https://github.com/jpsim/Yams.git", from: "6.2.2"),
+        // The app's (project.yml), declared here only so SwiftPM and Xcode write the same
+        // Package.resolved; no target here links it. Keep the version in step with project.yml.
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
     ],
     targets: [
         .target(
