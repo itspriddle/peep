@@ -110,6 +110,12 @@ lock the build database.
     (`AppOpenParameters`: `PepT` theme, `PepW` wait token in `+Wait`, with the
     `windowsClosed` notification name), and `StandardInputHandoff` writes, verifies, and takes
     the `cmd | peep` handoff file.
+  - `QuickLook/`: what the Quick Look extensions render. `QuickLookConfiguration` (the
+    settings the app publishes to the App Group `<team>.now.peep`, read with `published()`;
+    untrusted on the extensions' side: a custom theme's CSS is checked again), `QuickLookPreview`
+    (the page: fixed safety settings, `RemoteImagePolicy.blockAll` placeholders for every image
+    but `data:`, `ContentSecurityPolicy.quickLook`, a 2 MB cap), and `QuickLookThumbnail` (the
+    document's first blocks as plain text plus the theme background).
   - `Generated/`, `*.generated.swift`: generator output (`make emoji`, `make html-entities`,
     `make vendor-highlightjs`); never edit by hand. `Vendor/` holds vendored sources with a
     MANIFEST and license.
@@ -143,6 +149,11 @@ lock the build database.
     `MarkdownSettingsView` (#55) is Settings > Markdown: default flavor, frontmatter display,
     built-in preprocessors (one row per `MarkdownSettings.optionalPreprocessors` entry), then
     the custom preprocessor (#57) and processor (#106) sections.
+  - `QuickLook/`: `QuickLookConfigurationPublisher` writes `QuickLookConfiguration` to the App
+    Group's defaults on launch and on each `ThemeSettings` / `MarkdownSettings` change (custom
+    theme files included); off under tests and without a team (`PEEP_APP_GROUP` in
+    `Config/Shared.xcconfig`, the `PeepAppGroup` Info.plist key). Quick Look's theme is
+    `ThemeSettings.quickLookThemeID` (`nil` follows the default), Settings > General's picker.
   - `WikiLinks/`: `DocumentWikiLinks` (a per-render `FolderWikiLinkResolver` for a document,
     used by `DocumentContent` and Copy as HTML) over PeepCore's `FileSystemFolderReader`.
   - `MarkdownSettings/`: `MarkdownSettings` (the store: default flavor id, frontmatter
@@ -260,6 +271,13 @@ lock the build database.
   - `Menus/`: `MainMenu` builds the menu bar in code. A feature adds a `MenuContribution` type
     in its own file plus one line in `MainMenu.contributions`. AppKit inserts Open Recent and
     the Window menu's items itself; don't build them.
+- `Extensions/`: the Quick Look extensions, embedded in `Contents/PlugIns`, sandboxed, App Group
+  only (each folder's `.entitlements`; `scripts/package-release` fills in the group).
+  `Preview/PreviewProvider` (`PeepQuickLook`, a data-based `QLPreviewProvider` returning
+  `QuickLookPreview`'s HTML) and `Thumbnail/` (`PeepThumbnail`: `ThumbnailProvider` plus
+  `ThumbnailDrawing`, AppKit text, no web view). Keep them thin; logic goes in
+  `PeepCore/QuickLook`. Test by hand: `pluginkit -mAvvv -i now.peep.Peep.quicklook` shows which
+  copy is registered (Debug and Release collide), `qlmanage -r` and `qlmanage -r cache` reset.
 - `CLI/`: ArgumentParser `peep` tool, embedded at `Peep.app/Contents/Helpers/peep`.
   `CLI/PeepCLIKit` (library) is the command: `PeepCommand` (parse, cross-group `validate()`,
   mode pick, `execute(in: CLIEnvironment)`) plus one `@OptionGroup` file per concern

@@ -12,6 +12,8 @@ import PeepCore
 /// - `customThemeFailures`: custom theme files that didn't load, for the picker.
 /// - `defaultThemeID`: the theme for new windows, persisted. Only Settings (#36) sets it; View >
 ///   Theme changes one window.
+/// - `quickLookThemeID`: Quick Look's theme, persisted; `nil` follows `defaultThemeID`. The app
+///   publishes it to the Quick Look extensions (`QuickLookConfigurationPublisher`).
 @MainActor
 final class ThemeSettings {
     /// The app's settings. UI tests keep the default theme in memory.
@@ -23,11 +25,14 @@ final class ThemeSettings {
     /// The `UserDefaults` key: the default theme's id (a `String`), absent for the registry's
     /// own default.
     static let defaultThemeKey = "DefaultTheme"
+    /// The `UserDefaults` key: Quick Look's theme id (a `String`), absent to follow the default.
+    static let quickLookThemeKey = "QuickLookTheme"
 
     private let defaults: UserDefaults
     /// UI tests never read or write the reader's preference.
     private let isPersistent: Bool
     private var memoryDefaultThemeID: String?
+    private var memoryQuickLookThemeID: String?
 
     /// The themes windows can show. Setting it tells every window to resolve its theme again.
     var registry: ThemeRegistry {
@@ -78,6 +83,38 @@ final class ThemeSettings {
     /// The theme new windows start with.
     var defaultTheme: Theme {
         registry.theme(id: defaultThemeID)
+    }
+
+    /// The id of Quick Look's theme, or `nil` to use the default theme. May name a theme that
+    /// isn't registered (a deleted custom theme); `quickLookTheme` then follows the default.
+    var quickLookThemeID: String? {
+        get {
+            isPersistent ? defaults.string(forKey: Self.quickLookThemeKey) : memoryQuickLookThemeID
+        }
+        set {
+            guard newValue != quickLookThemeID else {
+                return
+            }
+            if isPersistent {
+                if let newValue {
+                    defaults.set(newValue, forKey: Self.quickLookThemeKey)
+                } else {
+                    defaults.removeObject(forKey: Self.quickLookThemeKey)
+                }
+            } else {
+                memoryQuickLookThemeID = newValue
+            }
+            NotificationCenter.default.post(name: Self.didChangeNotification, object: self)
+        }
+    }
+
+    /// The theme Quick Look renders with: `quickLookThemeID` while it is registered, else the
+    /// default theme.
+    var quickLookTheme: Theme {
+        if let id = quickLookThemeID, registry.contains(id: id) {
+            return registry.theme(id: id)
+        }
+        return defaultTheme
     }
 
     /// The theme a window that picked `id` shows: that theme while it is registered; else, while

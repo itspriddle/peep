@@ -160,13 +160,15 @@ xcodegen generate --quiet
 
 # Built ad hoc: every Mach-O is signed below with the Developer ID identity, so the build needs no
 # keychain or team. No injected base entitlements (get-task-allow), which notarization refuses.
+# PEEP_APP_GROUP still names the team (Xcode derives TeamIdentifierPrefix from DEVELOPMENT_TEAM and
+# ignores an override), so Info.plist's PeepAppGroup is the group the signatures below grant.
 log "archiving the Release build"
 xcodebuild -quiet \
   -project Peep.xcodeproj -scheme Peep -configuration Release \
   -destination 'generic/platform=macOS' -derivedDataPath "$DERIVED" \
   -archivePath "$ARCHIVE" archive \
   CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
-  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
+  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO PEEP_APP_GROUP="$team.now.peep"
 
 archived_app="$ARCHIVE/Products/Applications/Peep.app"
 [[ -d "$archived_app" ]] || die "the archive has no Peep.app at $archived_app"
@@ -203,7 +205,28 @@ log "signing the peep helper and the app"
 bundle_id_base="$(sed -nE 's/^PRODUCT_BUNDLE_IDENTIFIER_BASE = (.*)$/\1/p' Config/Shared.xcconfig)"
 [[ -n "$bundle_id_base" ]] || die "PRODUCT_BUNDLE_IDENTIFIER_BASE not found in Config/Shared.xcconfig"
 sign --identifier "$bundle_id_base.cli" "$app/Contents/Helpers/peep"
-sign --entitlements App/Peep.entitlements "$app"
+
+# Quick Look's App Group: codesign doesn't expand build settings, so each entitlements file is
+# signed from a copy with $(PEEP_APP_GROUP) filled in.
+app_group="$team.now.peep"
+entitlements_with_group() {
+  local copy
+  copy="$OUT/entitlements/$(basename "$1")"
+  mkdir -p "$OUT/entitlements"
+  sed "s/\$(PEEP_APP_GROUP)/$app_group/g" "$1" > "$copy"
+  # shellcheck disable=SC2016 # a literal $(, not an expansion
+  ! grep -qF '$(' "$copy" || die "unexpanded build setting in $1"
+  printf '%s\n' "$copy"
+}
+
+log "signing the Quick Look extensions"
+for extension in PeepQuickLook:Extensions/Preview/Preview.entitlements \
+  PeepThumbnail:Extensions/Thumbnail/Thumbnail.entitlements; do
+  appex="$app/Contents/PlugIns/${extension%%:*}.appex"
+  [[ -d "$appex" ]] || die "no ${extension%%:*}.appex in the app"
+  sign --entitlements "$(entitlements_with_group "${extension#*:}")" "$appex"
+done
+sign --entitlements "$(entitlements_with_group App/Peep.entitlements)" "$app"
 
 # --- Verify signatures -------------------------------------------------------------------------
 
@@ -237,6 +260,21 @@ done < <(find "$app" -type f -print0)
 helper_identifier="$(codesign -d --verbose=2 "$app/Contents/Helpers/peep" 2>&1 | sed -n 's/^Identifier=//p')"
 [[ "$helper_identifier" == "$bundle_id_base.cli" ]] || die "the helper's identifier is $helper_identifier"
 log "$macho_count Mach-O files: Developer ID, hardened runtime, secure timestamp"
+
+# Quick Look: the app and both extensions name the same team-prefixed App Group in Info.plist and
+# their signatures, and the extensions are sandboxed.
+for bundle in "$app" "$app/Contents/PlugIns/PeepQuickLook.appex" "$app/Contents/PlugIns/PeepThumbnail.appex"; do
+  name="${bundle#"$DMG_ROOT/"}"
+  info_group="$(plutil -extract PeepAppGroup raw "$bundle/Contents/Info.plist" 2> /dev/null || true)"
+  [[ "$info_group" == "$app_group" ]] || die "PeepAppGroup is '$info_group', expected $app_group: $name"
+  entitlements="$(codesign -d --entitlements - --xml "$bundle" 2> /dev/null || true)"
+  grep -qF "<string>$app_group</string>" <<< "$entitlements" || die "no $app_group App Group entitlement: $name"
+  if [[ "$bundle" == *.appex ]]; then
+    tr -d ' \t\n' <<< "$entitlements" | grep -qF '<key>com.apple.security.app-sandbox</key><true/>' \
+      || die "not sandboxed: $name"
+  fi
+done
+log "Quick Look extensions: sandboxed, App Group $app_group"
 
 # --- DMG ---------------------------------------------------------------------------------------
 

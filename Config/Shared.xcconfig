@@ -22,6 +22,11 @@ CODE_SIGN_STYLE = Automatic
 // environment's SPARKLE_ED_PRIVATE_KEY, keychain account `peep`: `generate_keys --account peep -p`
 // prints this key). Release builds fail if it isn't a 32-byte base64 key (project.yml, "Check the
 // Sparkle public key"). Never contains `//`, which xcconfig would read as a comment.
+// The App Group the app publishes Quick Look's settings to and its extensions read
+// (QuickLookConfiguration). Team-prefixed, so Developer ID needs no provisioning profile; a build
+// without a team has only the suffix, which the app and extensions refuse to use.
+PEEP_APP_GROUP = $(TeamIdentifierPrefix)now.peep
+
 SPARKLE_PUBLIC_ED_KEY = FHajez4+FQL8C7ZDg/ADS71nM4+wqh2sBqjmKV2AXmg=
 
 // Optional, gitignored overrides (e.g. DEVELOPMENT_TEAM). See Local.xcconfig.example.

@@ -15,14 +15,27 @@ public enum RemoteImagePolicy: Sendable, Equatable {
     /// scheme-relative `//host`, other schemes) with a placeholder. The viewer after the user
     /// opts in to remote images for a window.
     case allowHTTPS
+    /// Replace every image but `data:` URLs, local ones too (`RemoteImage(localSource:)`). Quick
+    /// Look's preview: its sandbox can read the previewed file, never the images beside it.
+    case blockAll
 
     /// Whether `image` becomes a placeholder.
     public func blocks(_ image: RemoteImage) -> Bool {
         switch self {
         case .keep: false
-        case .block: true
-        case .allowHTTPS: !image.isHTTPS
+        case .block: !image.isLocal
+        case .allowHTTPS: !image.isLocal && !image.isHTTPS
+        case .blockAll: true
         }
+    }
+
+    /// The image `source` names when this policy replaces it with a placeholder, else `nil`.
+    /// Local sources count only under `.blockAll`.
+    func blockedImage(source: String) -> RemoteImage? {
+        if let image = RemoteImage(source: source) {
+            return blocks(image) ? image : nil
+        }
+        return self == .blockAll ? RemoteImage(localSource: source) : nil
     }
 }
 
@@ -36,6 +49,9 @@ public struct RemoteImage: Sendable, Equatable, Hashable {
     public var host: String
     /// The URL is `https:`, so it loads once the user opts in (`RemoteImagePolicy.allowHTTPS`).
     public var isHTTPS: Bool
+    /// A local path (relative or root-relative), not a remote URL: only
+    /// `RemoteImagePolicy.blockAll` replaces it. `host` is empty.
+    public var isLocal = false
 
     /// Classifies `source`; `nil` when it is local (relative, or a `data:` URL).
     ///
@@ -44,15 +60,7 @@ public struct RemoteImage: Sendable, Equatable, Hashable {
     /// the URL grammar (`ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )`), so `a b:c` and `/x:y` are
     /// relative.
     public init?(source: String) {
-        let isTrimmed: (Unicode.Scalar) -> Bool = { $0.value <= 0x20 }
-        var scalars = source.unicodeScalars.filter { !["\t", "\n", "\r"].contains($0) }
-        while let first = scalars.first, isTrimmed(first) {
-            scalars.removeFirst()
-        }
-        while let last = scalars.last, isTrimmed(last) {
-            scalars.removeLast()
-        }
-        let cleaned = String(String.UnicodeScalarView(scalars))
+        let cleaned = Self.cleaned(source)
         let scheme = Self.scheme(of: cleaned)
         let afterScheme: Substring
         if let scheme {
@@ -68,6 +76,33 @@ public struct RemoteImage: Sendable, Equatable, Hashable {
         url = source
         host = Self.host(after: afterScheme)
         isHTTPS = scheme == "https"
+    }
+
+    /// A local image: `source` has no scheme and isn't scheme-relative (so not `data:` either),
+    /// and isn't blank. `nil` for anything else.
+    init?(localSource source: String) {
+        let cleaned = Self.cleaned(source)
+        guard !cleaned.isEmpty, Self.scheme(of: cleaned) == nil, !Self.isSchemeRelative(cleaned) else {
+            return nil
+        }
+        url = source
+        host = ""
+        isHTTPS = false
+        isLocal = true
+    }
+
+    /// `source` cleaned the way the URL parser does: tab and newlines removed everywhere,
+    /// leading and trailing controls and spaces trimmed.
+    private static func cleaned(_ source: String) -> String {
+        let isTrimmed: (Unicode.Scalar) -> Bool = { $0.value <= 0x20 }
+        var scalars = source.unicodeScalars.filter { !["\t", "\n", "\r"].contains($0) }
+        while let first = scalars.first, isTrimmed(first) {
+            scalars.removeFirst()
+        }
+        while let last = scalars.last, isTrimmed(last) {
+            scalars.removeLast()
+        }
+        return String(String.UnicodeScalarView(scalars))
     }
 
     /// The lowercased scheme of `url`, or `nil` when it has none (a relative URL).

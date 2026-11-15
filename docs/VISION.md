@@ -1020,6 +1020,23 @@ editor or a browser.
   - Nothing else crosses: the CLI forwards no environment but the launch-timing variables, no
     preprocessor or render setting travels to the app, and the CLI reads none of the app's
     Settings.
+- **Quick Look** (the preview and thumbnail extensions, `Extensions/`) renders files the reader
+  merely selects in Finder, including downloads, so it is the most locked-down path:
+  - **Sandboxed**, no network, no file exceptions: an extension reads the selected file (at most
+    2 MB for a preview, 256 KB for a thumbnail) and the App Group's defaults, nothing else.
+  - **Fixed safety settings** (`QuickLookPreview.renderOptions`), whatever is configured: no
+    custom preprocessor or processor ever runs, raw HTML is sanitized, wiki links have no
+    resolver (missing, as in `peep --html`), and every image but `data:` URLs is a placeholder
+    (`RemoteImagePolicy.blockAll`: the sandbox can't read the images beside the file, and nothing
+    remote loads). The page's CSP is `ContentSecurityPolicy.quickLook` (`img-src data:`, no
+    scripts). Thumbnails are drawn with AppKit text from the syntax tree; no web view runs.
+  - **Settings cross one way, as data:** the app (not sandboxed) publishes a
+    `QuickLookConfiguration` (theme id, flavor, frontmatter display, built-in preprocessors) to
+    a team-prefixed App Group, `<team>.now.peep` (`QuickLookConfigurationPublisher`). For a
+    custom theme it includes the file's text, which the extension checks again with
+    `CustomThemeCSS` before using; anything unreadable is the default. The configuration has no
+    field for programs, image or network policy, so even a tampered value can only change the
+    presentation. A build without a team (ad hoc, unsigned) has no group and publishes nothing.
 - Hardened runtime, notarized builds, Sparkle updates signed with EdDSA over HTTPS.
 - **Updates (#81)** follow one trust chain, all of it required (Info.plist, set in
   `project.yml`; `UpdatesTests` checks the built app's keys):
