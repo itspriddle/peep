@@ -103,24 +103,30 @@ enum UITestHooks {
 
     /// The custom preprocessor executable a UI test asked for, or nil. Always nil in Release.
     static var preprocessorExecutable: String? {
-        executable(forKey: preprocessorKey)
-    }
-
-    /// The custom processor executable a UI test asked for (#106), or nil. Always nil in Release.
-    static var processorExecutable: String? {
-        executable(forKey: processorKey)
-    }
-
-    private static func executable(forKey key: String) -> String? {
         #if DEBUG
-            guard isUITesting, let path = UserDefaults.standard.string(forKey: key), path.hasPrefix("/") else {
-                return nil
-            }
-            return path
+            executable(forKey: preprocessorKey)
         #else
             nil
         #endif
     }
+
+    /// The custom processor executable a UI test asked for (#106), or nil. Always nil in Release.
+    static var processorExecutable: String? {
+        #if DEBUG
+            executable(forKey: processorKey)
+        #else
+            nil
+        #endif
+    }
+
+    #if DEBUG
+        private static func executable(forKey key: String) -> String? {
+            guard isUITesting, let path = UserDefaults.standard.string(forKey: key), path.hasPrefix("/") else {
+                return nil
+            }
+            return path
+        }
+    #endif
 
     /// The delay a UI test asked to add to every render, or nil. Always nil in Release. Safe to
     /// read off the main actor (`UserDefaults` is thread-safe).
