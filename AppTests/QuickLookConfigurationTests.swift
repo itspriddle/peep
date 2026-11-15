@@ -4,7 +4,7 @@ import Testing
 
 @testable import PeepApp
 
-/// Quick Look's settings (`QuickLookConfigurationPublisher`, Settings > General's Quick Look
+/// Quick Look's settings (`QuickLookConfigurationPublisher`, Settings > Quick Look's
 /// theme): what the app publishes for its extensions, over throwaway defaults for both the app's
 /// stores and the App Group store.
 @MainActor

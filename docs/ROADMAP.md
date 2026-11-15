@@ -1032,7 +1032,7 @@ A running list of what 1.0 includes, in rough priority order. Each becomes its o
   Settings > Markdown > Custom processor; `peep --processor PATH --processor-arg ARG`
 - **Quick Look (in progress):** preview of Markdown files (space bar, Finder's preview pane and
   gallery view), sandboxed, with the fixed safety settings in VISION. Settings >
-  General > Quick Look theme (default: same as the default theme; a document's `peep.theme`
+  Quick Look > Quick Look theme (default: same as the default theme; a document's `peep.theme`
   wins); Settings > Markdown's flavor, frontmatter, and built-in preprocessors apply; local
   images are placeholders. No thumbnails: macOS 27 never calls a third-party Markdown
   thumbnail extension (FB24481377)

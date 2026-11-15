@@ -24,6 +24,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             Self.pane("General", symbol: "gearshape", identifier: "general", GeneralSettingsView(model: model)))
         tabs.addTabViewItem(
             Self.pane("Markdown", symbol: "doc.text", identifier: "markdown", MarkdownSettingsView(model: model)))
+        tabs.addTabViewItem(
+            Self.pane("Quick Look", symbol: "eye", identifier: "quicklook", QuickLookSettingsView(model: model)))
 
         let window = NSWindow(contentViewController: tabs)
         window.styleMask = [.titled, .closable]

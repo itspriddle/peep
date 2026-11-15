@@ -8,7 +8,7 @@ import PeepCore
 /// | --- | --- | --- |
 /// | Appearance | `AppearanceSettings.mode` | the whole app, live |
 /// | Default theme | `ThemeSettings.defaultThemeID` | new windows |
-/// | Quick Look theme | `ThemeSettings.quickLookThemeID` | Quick Look, via `QuickLookConfigurationPublisher` |
+/// | Quick Look theme (Quick Look pane) | `ThemeSettings.quickLookThemeID` | Quick Look, via `QuickLookConfigurationPublisher` |
 /// | (Open Themes Folder) | `CustomThemeLibrary.openFolder()` (#35) | Finder |
 /// | Show outline in new windows | `OutlinePreference` | new windows |
 /// | Pin new windows | `WindowPinPreference` | new windows |

@@ -3,7 +3,7 @@ import Testing
 
 @testable import PeepApp
 
-/// Settings > General's Quick Look theme picker.
+/// Settings > Quick Look's theme picker.
 extension SettingsTests {
     @Test("the Quick Look theme picker follows the default until a theme is picked")
     func quickLookTheme() {

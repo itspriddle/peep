@@ -5,7 +5,7 @@ import SwiftUI
 /// its `set…` method; the identifiers (`settings-*`) are for UI tests.
 ///
 /// Sections: Appearance (System, Light, or Dark; applies to every window at once), Themes (the
-/// default theme, Quick Look's theme, custom theme files that didn't load, and Open Themes
+/// default theme, custom theme files that didn't load, and Open Themes
 /// Folder, #35), Windows (outline and pin defaults), Reading (the zoom and content width new windows
 /// start with; View > Zoom and View > Content Width change one window, #47; a custom width in
 /// px that, while on, every window uses instead; collapsible sections, every window), Default
@@ -38,17 +38,6 @@ struct GeneralSettingsView: View {
                 }
                 .accessibilityIdentifier("settings-default-theme")
                 note("New windows open in this theme. View > Theme changes a window’s theme.")
-                Picker("Quick Look theme:", selection: binding(\.quickLookThemeID, model.setQuickLookTheme(id:))) {
-                    Text("Same as default theme").tag(SettingsModel.quickLookFollowsDefault)
-                    ForEach(Array(model.themeSections.enumerated()), id: \.offset) { _, section in
-                        Divider()
-                        ForEach(section, id: \.id) { theme in
-                            Text(theme.displayName).tag(theme.id)
-                        }
-                    }
-                }
-                .accessibilityIdentifier("settings-quick-look-theme")
-                note("Previews in Finder and Quick Look use this theme. A document’s peep.theme still wins.")
                 ForEach(model.themeFailures, id: \.self) { failure in
                     Label(failure, systemImage: "exclamationmark.triangle")
                         .font(.callout)

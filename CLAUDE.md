@@ -153,7 +153,8 @@ lock the build database.
     Group's defaults on launch and on each `ThemeSettings` / `MarkdownSettings` change (custom
     theme files included); off under tests and without a team (`PEEP_APP_GROUP` in
     `Config/Shared.xcconfig`, the `PeepAppGroup` Info.plist key). Quick Look's theme is
-    `ThemeSettings.quickLookThemeID` (`nil` follows the default), Settings > General's picker.
+    `ThemeSettings.quickLookThemeID` (`nil` follows the default), Settings > Quick Look's picker
+    (`Settings/QuickLookSettingsView`).
   - `WikiLinks/`: `DocumentWikiLinks` (a per-render `FolderWikiLinkResolver` for a document,
     used by `DocumentContent` and Copy as HTML) over PeepCore's `FileSystemFolderReader`.
   - `MarkdownSettings/`: `MarkdownSettings` (the store: default flavor id, frontmatter

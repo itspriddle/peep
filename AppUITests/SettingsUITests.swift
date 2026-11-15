@@ -58,8 +58,8 @@ final class SettingsUITests: XCTestCase {
         XCTAssertGreaterThan(serif.height, github.height + 1, "the new window uses Serif")
     }
 
-    /// Settings > General > Quick Look theme: follows the default theme until one is picked, keeps
-    /// the pick while the app runs, and changes no window (it applies only to Quick Look, whose
+    /// Settings > Quick Look: the theme follows the default theme until one is picked, keeps the
+    /// pick while the app runs, and changes no window (it applies only to Quick Look, whose
     /// configuration UI tests never publish).
     func testQuickLookThemePicker() throws {
         let peep = try PeepUITestApp.launch(openingFixture: "settings/first.md")
@@ -68,19 +68,22 @@ final class SettingsUITests: XCTestCase {
         let github = peep.waitForRenderedText(Self.line, in: window).frame
 
         let settings = peep.openSettings()
+        peep.showSettingsPane("Quick Look")
         let picker = settings.popUpButtons["settings-quick-look-theme"]
         XCTAssertTrue(picker.exists)
         XCTAssertEqual(picker.value as? String, "Same as default theme")
         peep.chooseSetting("Serif", in: "settings-quick-look-theme")
         XCTAssertEqual(picker.value as? String, "Serif")
+        XCTAssertEqual(peep.renderedText(Self.line, in: window).frame.height, github.height, accuracy: 0.5)
+        peep.showSettingsPane("General")
         XCTAssertEqual(
             settings.popUpButtons["settings-default-theme"].value as? String, "GitHub", "the default theme is unchanged"
         )
-        XCTAssertEqual(peep.renderedText(Self.line, in: window).frame.height, github.height, accuracy: 0.5)
 
         settings.typeKey("w", modifierFlags: .command)
         XCTAssertTrue(settings.waitForNonExistence(timeout: PeepUITestApp.defaultTimeout), "Settings closed")
         peep.openSettings()
+        peep.showSettingsPane("Quick Look")
         XCTAssertEqual(peep.settingsWindow.popUpButtons["settings-quick-look-theme"].value as? String, "Serif")
         peep.chooseSetting("Same as default theme", in: "settings-quick-look-theme")
         XCTAssertEqual(
