@@ -59,7 +59,8 @@ class DocumentWindowTestCase {
     /// `appearance` is set on the window before the page loads (light or dark from the start).
     func open(
         _ source: String = source, name: String = "notes.md", zoomSettings: ZoomSettings? = nil,
-        contentWidthSettings: ContentWidthSettings? = nil, themeSettings: ThemeSettings? = nil,
+        contentWidthSettings: ContentWidthSettings? = nil,
+        collapsibleSectionsSettings: CollapsibleSectionsSettings? = nil, themeSettings: ThemeSettings? = nil,
         markdownSettings: MarkdownSettings? = nil, customPreprocessorSettings: CustomProgramSettings? = nil,
         customProcessorSettings: CustomProgramSettings? = nil,
         statusBarPreference: StatusBarPreference? = nil, pinPreference: WindowPinPreference? = nil,
@@ -82,6 +83,8 @@ class DocumentWindowTestCase {
             pinPreference: pinPreference ?? WindowPinPreference(defaults: defaults, isPersistent: true),
             zoomSettings: zoomSettings ?? settings(),
             contentWidthSettings: contentWidthSettings ?? ContentWidthSettings(defaults: defaults, isPersistent: true),
+            collapsibleSectionsSettings: collapsibleSectionsSettings
+                ?? CollapsibleSectionsSettings(defaults: defaults, isPersistent: true),
             themeSettings: themeSettings ?? self.themeSettings())
         if let appearance {
             controller.window?.appearance = NSAppearance(named: appearance)

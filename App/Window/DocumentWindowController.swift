@@ -70,6 +70,10 @@ final class DocumentWindowController: NSWindowController {
     /// This window's content width (restorable). Starts at Settings' default.
     var contentWidth: ContentWidth
 
+    /// Whether clicking a heading folds its section, in every window
+    /// (`DocumentWindowController+CollapsibleSections.swift`).
+    let collapsibleSectionsSettings: CollapsibleSectionsSettings
+
     // MARK: Theme (#34, `DocumentWindowController+Theme.swift`)
 
     /// The registry and default theme this window follows.
@@ -96,6 +100,7 @@ final class DocumentWindowController: NSWindowController {
         pinPreference: WindowPinPreference = WindowPinPreference(),
         zoomSettings: ZoomSettings = .shared,
         contentWidthSettings: ContentWidthSettings = .shared,
+        collapsibleSectionsSettings: CollapsibleSectionsSettings = .shared,
         themeSettings: ThemeSettings = .shared,
         renderProgress: RenderProgress = RenderProgress()
     ) {
@@ -106,6 +111,7 @@ final class DocumentWindowController: NSWindowController {
         self.pinPreference = pinPreference
         self.zoomSettings = zoomSettings
         self.contentWidthSettings = contentWidthSettings
+        self.collapsibleSectionsSettings = collapsibleSectionsSettings
         self.themeSettings = themeSettings
         newWindowThemeID = themeSettings.defaultThemeIDForNewWindows
         zoomLevel = zoomSettings.defaultLevel
@@ -128,6 +134,7 @@ final class DocumentWindowController: NSWindowController {
         installOutline()
         installZoom()
         installContentWidth()
+        installCollapsibleSections()
         installTheme()
         installPin()
     }

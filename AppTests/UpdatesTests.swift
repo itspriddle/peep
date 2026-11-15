@@ -147,6 +147,7 @@ struct UpdatesTests {
             themeSettings: ThemeSettings(isPersistent: false),
             zoomSettings: ZoomSettings(defaults: defaults, isPersistent: false),
             contentWidthSettings: ContentWidthSettings(defaults: defaults, isPersistent: false),
+            collapsibleSectionsSettings: CollapsibleSectionsSettings(defaults: defaults, isPersistent: false),
             outlinePreference: OutlinePreference(defaults: defaults, isPersistent: false),
             markdownSettings: MarkdownSettings(defaults: defaults, isPersistent: false),
             updater: updater, defaultViewerOffer: DefaultViewerOfferController(viewer: viewer))

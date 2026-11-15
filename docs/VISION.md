@@ -340,6 +340,20 @@ editor or a browser.
   then shows a checked "Custom: 800px" item and disables the presets. Unlike the presets it is
   the width of the text: the layer adds `box-sizing: content-box`, so a theme's padding is
   outside it. Screen only, like the presets.
+- **Collapsible sections:** Settings > General's "Click headings to collapse sections" (off by
+  default, every window, live). Clicking a top-level heading (a direct child of the article)
+  folds everything after it up to the next heading of the same or a higher level; headings in
+  lists, quotes, and raw HTML don't fold, and the footnotes section never does. An app script
+  (`CollapsibleSections.js`, isolated world) does it on the page: no renderer change, so the
+  CLI, Copy as HTML, and the word count see the whole document. Folded blocks get
+  `data-peep-folded`, hidden by a protected base-layer rule; the sanitizer allows no `data-`
+  attributes, so a document can't fold itself. Links in a heading still navigate, a drag that
+  selects heading text doesn't fold, and a double-click (selecting a word) nets no change.
+  Folding keeps the clicked heading where it is on screen. Live reload and in-place re-renders
+  keep what is folded (by heading id, else level and text); outline clicks, `#fragment` links,
+  and find matches unfold their section; reading position skips folded blocks. View > Collapse
+  All Sections / Expand All Sections fold the whole page. Not restored with the window (a
+  fold is a moment's view, not a setting). Print shows what's on screen, without chevrons.
 - **Theme picker (#34):** each window has its own theme, picked from View > Theme (bundled themes, then custom ones in their own section), checked in
   the menu, and kept by window restoration (an unknown id shows the default). A pick changes
   that window only; the theme for new windows is Settings' (#36). A switch is an in-place swap, not a reload: an app script replaces the

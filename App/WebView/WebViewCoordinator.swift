@@ -62,6 +62,11 @@ final class WebViewCoordinator: NSObject {
     /// (`WebViewCoordinator+UserStyle.swift`) updates the loaded page in place.
     var userStyle = UserStyle.themeDefaults
 
+    /// Whether clicking a heading folds its section (`WebViewCoordinator+Sections.swift`). Set
+    /// it before the first load; after a change, `applyCollapsibleSectionsToPage()` updates the
+    /// loaded page.
+    var collapsibleSections = false
+
     /// Find in page (#25, `WebViewCoordinator+Find.swift`): the find bar's state and commands,
     /// sharing the system find pasteboard (#42).
     private(set) lazy var find = FindInPage(host: self, pasteboard: NSPasteboard(name: .find))
@@ -165,6 +170,10 @@ final class WebViewCoordinator: NSObject {
         try await swapThemeIfNeeded()
         if userStyle != style {
             try await applyUserStyleToPage()
+        }
+        // A new page starts with collapsible sections off.
+        if collapsibleSections {
+            try await applyCollapsibleSectionsToPage()
         }
     }
 

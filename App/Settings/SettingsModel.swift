@@ -14,6 +14,7 @@ import PeepCore
 /// | Zoom | `ZoomSettings.defaultLevel` | new windows (#47) |
 /// | Content width | `ContentWidthSettings.defaultWidth` | new windows (#47) |
 /// | Custom content width | `ContentWidthSettings.isCustomWidthEnabled`, `customWidthPoints` | every window, live |
+/// | Collapsible sections | `CollapsibleSectionsSettings.isEnabled` | every window, live |
 /// | Default Markdown viewer | `DefaultViewer` (Launch Services) | system-wide |
 /// | Default flavor | `MarkdownSettings.defaultFlavorID` | every document, live (#55) |
 /// | Frontmatter display | `MarkdownSettings.frontmatterDisplay` | every document, live (#55) |
@@ -39,6 +40,7 @@ final class SettingsModel: NSObject {
     @ObservationIgnored let themeSettings: ThemeSettings
     @ObservationIgnored let zoomSettings: ZoomSettings
     @ObservationIgnored let contentWidthSettings: ContentWidthSettings
+    @ObservationIgnored let collapsibleSectionsSettings: CollapsibleSectionsSettings
     @ObservationIgnored let outlinePreference: OutlinePreference
     @ObservationIgnored let pinPreference: WindowPinPreference
     @ObservationIgnored let markdownSettings: MarkdownSettings
@@ -70,6 +72,8 @@ final class SettingsModel: NSObject {
     private(set) var isCustomWidthEnabled = false
     /// The custom width in px (kept while it is off).
     private(set) var customWidthPoints = CustomContentWidth.defaultPoints
+    /// Whether clicking a heading collapses its section, in every window.
+    private(set) var collapsesSections = false
     private(set) var showsOutlineInNewWindows = false
     private(set) var pinsNewWindows = false
     private(set) var isDefaultViewer = false
@@ -94,6 +98,7 @@ final class SettingsModel: NSObject {
         themeSettings: ThemeSettings = .shared,
         zoomSettings: ZoomSettings = .shared,
         contentWidthSettings: ContentWidthSettings = .shared,
+        collapsibleSectionsSettings: CollapsibleSectionsSettings = .shared,
         outlinePreference: OutlinePreference = OutlinePreference(),
         pinPreference: WindowPinPreference = WindowPinPreference(),
         markdownSettings: MarkdownSettings = .shared,
@@ -109,6 +114,7 @@ final class SettingsModel: NSObject {
         self.themeSettings = themeSettings
         self.zoomSettings = zoomSettings
         self.contentWidthSettings = contentWidthSettings
+        self.collapsibleSectionsSettings = collapsibleSectionsSettings
         self.outlinePreference = outlinePreference
         self.pinPreference = pinPreference
         self.markdownSettings = markdownSettings
@@ -130,6 +136,9 @@ final class SettingsModel: NSObject {
             self, selector: refreshSelector, name: ContentWidthSettings.didChangeNotification,
             object: contentWidthSettings)
         center.addObserver(
+            self, selector: refreshSelector, name: CollapsibleSectionsSettings.didChangeNotification,
+            object: collapsibleSectionsSettings)
+        center.addObserver(
             self, selector: refreshSelector, name: MarkdownSettings.didChangeNotification, object: markdownSettings)
     }
 
@@ -148,6 +157,7 @@ final class SettingsModel: NSObject {
         contentWidth = contentWidthSettings.defaultWidth
         isCustomWidthEnabled = contentWidthSettings.isCustomWidthEnabled
         customWidthPoints = contentWidthSettings.customWidthPoints
+        collapsesSections = collapsibleSectionsSettings.isEnabled
         showsOutlineInNewWindows = outlinePreference.showsOutlineInNewWindows
         pinsNewWindows = pinPreference.pinsNewWindows
         isDefaultViewer = defaultViewerOffer.viewer.isDefault
@@ -209,6 +219,12 @@ final class SettingsModel: NSObject {
     /// Sets the custom width, clamped to `CustomContentWidth.range`; windows follow it while it is on.
     func setCustomWidthPoints(_ points: Int) {
         contentWidthSettings.customWidthPoints = points
+        refresh()
+    }
+
+    /// Clicking a heading collapses its section (or stops), in every window, live.
+    func setCollapsesSections(_ collapses: Bool) {
+        collapsibleSectionsSettings.isEnabled = collapses
         refresh()
     }
 

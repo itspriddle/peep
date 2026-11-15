@@ -9,7 +9,7 @@ final class MainMenu {
         UpdatesMenu.self, SettingsMenu.self, CommandLineToolMenu.self, OutlineMenu.self, StatusBarMenu.self,
         AppearanceMenu.self,
         ThemeMenu.self,
-        ZoomMenu.self, ContentWidthMenu.self,
+        ZoomMenu.self, ContentWidthMenu.self, SectionsMenu.self,
         PrintMenu.self,
         CopyMenu.self, FindMenu.self,
         WindowPinMenu.self,

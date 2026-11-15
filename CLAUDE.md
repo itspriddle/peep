@@ -173,6 +173,13 @@ lock the build database.
     `HomebrewCask` (#84): a prefix whose `Caskroom/peep` exists and whose `bin/peep` is our
     link is Homebrew's; the item becomes Command Line Tool Installed by Homebrew… (an alert
     only), and that folder is never offered for install or uninstall. No prefixes under tests.
+  - `CollapsibleSections/`: `CollapsibleSectionsSettings` (Settings > General's "Click headings
+    to collapse sections", off by default, every window live; `-PeepUITestCollapsibleSections
+    YES` under UI tests). The page side is `App/Scripts/CollapsibleSections.js`
+    (`peepSections`, also used by `DocumentBridge.js` and `FindInPage.js` to skip and unfold
+    folded blocks), via `WebViewCoordinator+Sections` and
+    `DocumentWindowController+CollapsibleSections.swift`; View > Collapse/Expand All Sections is
+    `SectionsMenu`. The `data-peep-folded` rule is in `ThemeBase`.
   - `Updates/` (#81): Sparkle 2 (app target only). `SoftwareUpdating` (what the menu and
     Settings use; fakes in tests), `SparkleUpdater` (`SPUStandardUpdaterController`, started from
     `AppDelegate.applicationDidFinishLaunching`; channels), `InactiveUpdater` (in memory, never

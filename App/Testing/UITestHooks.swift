@@ -29,6 +29,8 @@ import Foundation
 /// - `-PeepUITestCommandLineToolFolder <path>`: App menu > Install Command Line Tool… (#70)
 ///   offers only this absolute folder. Without it a UI-test launch offers none (the item is
 ///   hidden), so tests never touch `/usr/local/bin` or `~/.local/bin`.
+/// - `-PeepUITestCollapsibleSections YES`: start with collapsible sections on
+///   (`CollapsibleSectionsSettings`, in memory). Without it a UI-test launch has them off.
 ///
 /// UI-test launches (and hosted unit tests) never add to Open Recent (`DocumentController`).
 enum UITestHooks {
@@ -47,6 +49,8 @@ enum UITestHooks {
         static let renderDelayKey = "PeepUITestRenderDelay"
         /// Launch argument (a `UserDefaults` key) with an absolute path to install the CLI in.
         static let commandLineToolFolderKey = "PeepUITestCommandLineToolFolder"
+        /// Launch argument (a `UserDefaults` key): YES starts with collapsible sections on.
+        static let collapsibleSectionsKey = "PeepUITestCollapsibleSections"
     #endif
 
     /// Whether a UI test launched the app. Always `false` in Release builds.
@@ -144,6 +148,15 @@ enum UITestHooks {
             return URL(filePath: path, directoryHint: .isDirectory)
         #else
             nil
+        #endif
+    }
+
+    /// Whether a UI test asked for collapsible sections on. Always `false` in Release builds.
+    static var enablesCollapsibleSections: Bool {
+        #if DEBUG
+            isUITesting && UserDefaults.standard.bool(forKey: collapsibleSectionsKey)
+        #else
+            false
         #endif
     }
 }
