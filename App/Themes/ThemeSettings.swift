@@ -13,7 +13,7 @@ import PeepCore
 /// - `defaultThemeID`: the theme for new windows, persisted. Only Settings (#36) sets it; View >
 ///   Theme changes one window.
 /// - `quickLookThemeID`: Quick Look's theme, persisted; `nil` follows `defaultThemeID`. The app
-///   publishes it to the Quick Look extensions (`QuickLookConfigurationPublisher`).
+///   publishes it to the Quick Look extension (`QuickLookConfigurationPublisher`).
 @MainActor
 final class ThemeSettings {
     /// The app's settings. UI tests keep the default theme in memory.

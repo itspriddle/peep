@@ -1,17 +1,17 @@
 import Foundation
 
 /// What Quick Look renders with: the settings the app publishes into the shared App Group
-/// container for its sandboxed Quick Look extensions, which can't read the app's own defaults or
+/// container for its sandboxed Quick Look extension, which can't read the app's own defaults or
 /// its Themes folder.
 ///
-/// The extensions treat it as untrusted input: an unreadable value is the default
+/// The extension treats it as untrusted input: an unreadable value is the default
 /// (`init(data:)`), an unknown id falls back as everywhere else, and a custom theme's CSS must
 /// pass `CustomThemeCSS` again (`themeRegistry`). Only presentation lives here; nothing in it can
 /// turn on a custom preprocessor or processor, remote images, or local file reads.
 public struct QuickLookConfiguration: Codable, Sendable, Equatable {
     /// The App Group suffix; the full identifier is the team id, a dot, then this.
     public static let appGroupSuffix = "now.peep"
-    /// The Info.plist key (app and extensions) holding the App Group identifier, set at build time
+    /// The Info.plist key (app and extension) holding the App Group identifier, set at build time
     /// from `$(TeamIdentifierPrefix)` (`PEEP_APP_GROUP` in `Config/Shared.xcconfig`).
     public static let appGroupInfoKey = "PeepAppGroup"
 
@@ -75,7 +75,7 @@ public struct QuickLookConfiguration: Codable, Sendable, Equatable {
     }
 
     /// What the app published to the App Group named in `bundle`'s Info.plist, or `.default`
-    /// without a group or a published value. The extensions' one read.
+    /// without a group or a published value. The extension's one read.
     public static func published(bundle: Bundle = .main) -> QuickLookConfiguration {
         guard let group = appGroupIdentifier(infoValue: bundle.object(forInfoDictionaryKey: appGroupInfoKey)),
             let store = UserDefaults(suiteName: group)

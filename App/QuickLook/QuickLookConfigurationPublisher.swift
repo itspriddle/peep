@@ -3,7 +3,7 @@ import PeepCore
 import os
 
 /// Publishes what Quick Look renders with (`QuickLookConfiguration`) to the App Group's defaults,
-/// where the sandboxed Quick Look extensions read it: Quick Look's theme (Settings > General,
+/// where the sandboxed Quick Look extension reads it: Quick Look's theme (Settings > General,
 /// `ThemeSettings.quickLookTheme`, with a custom theme's file text), and Settings > Markdown's
 /// flavor, frontmatter display, and built-in preprocessors. Custom programs are never published.
 ///

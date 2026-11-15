@@ -29,7 +29,6 @@ cask "peep" do
     "~/Library/Application Support/Peep",
     "~/Library/Caches/now.peep.Peep",
     "~/Library/Containers/now.peep.Peep.quicklook",
-    "~/Library/Containers/now.peep.Peep.thumbnail",
     "~/Library/Group Containers/*.now.peep",
     "~/Library/HTTPStorages/now.peep.Peep",
     "~/Library/HTTPStorages/now.peep.Peep.binarycookies",

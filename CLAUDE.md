@@ -114,8 +114,8 @@ lock the build database.
     settings the app publishes to the App Group `<team>.now.peep`, read with `published()`;
     untrusted on the extensions' side: a custom theme's CSS is checked again), `QuickLookPreview`
     (the page: fixed safety settings, `RemoteImagePolicy.blockAll` placeholders for every image
-    but `data:`, `ContentSecurityPolicy.quickLook`, a 2 MB cap), and `QuickLookThumbnail` (the
-    document's first blocks as plain text plus the theme background).
+    but `data:`, `ContentSecurityPolicy.quickLook`, a 2 MB cap). No thumbnail extension: macOS 27
+    never calls a third-party Markdown thumbnailer (its own text one wins; FB24481377).
   - `Generated/`, `*.generated.swift`: generator output (`make emoji`, `make html-entities`,
     `make vendor-highlightjs`); never edit by hand. `Vendor/` holds vendored sources with a
     MANIFEST and license.
@@ -271,11 +271,10 @@ lock the build database.
   - `Menus/`: `MainMenu` builds the menu bar in code. A feature adds a `MenuContribution` type
     in its own file plus one line in `MainMenu.contributions`. AppKit inserts Open Recent and
     the Window menu's items itself; don't build them.
-- `Extensions/`: the Quick Look extensions, embedded in `Contents/PlugIns`, sandboxed, App Group
-  only (each folder's `.entitlements`; `scripts/package-release` fills in the group).
+- `Extensions/`: the Quick Look extension, embedded in `Contents/PlugIns`, sandboxed, App Group
+  only (`Preview/Preview.entitlements`; `scripts/package-release` fills in the group).
   `Preview/PreviewProvider` (`PeepQuickLook`, a data-based `QLPreviewProvider` returning
-  `QuickLookPreview`'s HTML) and `Thumbnail/` (`PeepThumbnail`: `ThumbnailProvider` plus
-  `ThumbnailDrawing`, AppKit text, no web view). Keep them thin; logic goes in
+  `QuickLookPreview`'s HTML). Keep it thin; logic goes in
   `PeepCore/QuickLook`. Test by hand: `pluginkit -mAvvv -i now.peep.Peep.quicklook` shows which
   copy is registered (Debug and Release collide), `qlmanage -r` and `qlmanage -r cache` reset.
 - `CLI/`: ArgumentParser `peep` tool, embedded at `Peep.app/Contents/Helpers/peep`.

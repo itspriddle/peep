@@ -111,7 +111,7 @@ targets:
       path: App/Peep.entitlements
       properties:
         com.apple.security.app-sandbox: false
-        # Quick Look's settings, shared with its extensions (valid without the sandbox).
+        # Quick Look's settings, shared with its extension (valid without the sandbox).
         com.apple.security.application-groups:
           - $(PEEP_APP_GROUP)
     settings:
@@ -132,11 +132,8 @@ targets:
         copy:
           destination: wrapper
           subpath: Contents/Helpers
-      # Quick Look (Contents/PlugIns): the preview and thumbnail extensions.
+      # Quick Look (Contents/PlugIns): the preview extension.
       - target: PeepQuickLook
-        embed: true
-        codeSign: true
-      - target: PeepThumbnail
         embed: true
         codeSign: true
     # A Release build must carry the real Sparkle public key (#81): the placeholder in
@@ -237,43 +234,6 @@ targets:
         product: PeepCore
       - sdk: QuickLookUI.framework
       - sdk: UniformTypeIdentifiers.framework
-
-  # Finder's thumbnails (icon and gallery views): the start of the document drawn natively
-  # (QuickLookThumbnail). Sandboxed like the preview.
-  PeepThumbnail:
-    type: app-extension
-    platform: macOS
-    sources:
-      - path: Extensions/Thumbnail
-        excludes:
-          - "*.entitlements"
-    info:
-      path: Extensions/Thumbnail/Info.plist
-      properties:
-        CFBundleDisplayName: Peep Thumbnail
-        CFBundleShortVersionString: $(MARKETING_VERSION)
-        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        PeepAppGroup: $(PEEP_APP_GROUP)
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.quicklook.thumbnail
-          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ThumbnailProvider
-          NSExtensionAttributes:
-            QLThumbnailMinimumDimension: 0
-            QLSupportedContentTypes:
-              - net.daringfireball.markdown
-              - $(PRODUCT_BUNDLE_IDENTIFIER_BASE).markdown
-    settings:
-      base:
-        PRODUCT_NAME: PeepThumbnail
-        PRODUCT_BUNDLE_IDENTIFIER: $(PRODUCT_BUNDLE_IDENTIFIER_BASE).thumbnail
-        CODE_SIGN_ENTITLEMENTS: Extensions/Thumbnail/Thumbnail.entitlements
-        ENABLE_APP_SANDBOX: YES
-        GENERATE_INFOPLIST_FILE: NO
-        SKIP_INSTALL: YES
-    dependencies:
-      - package: peep
-        product: PeepCore
-      - sdk: QuickLookThumbnailing.framework
 
   AppTests:
     type: bundle.unit-test

@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// Sparkle (#81), or an inactive stand-in where updates are off (`SoftwareUpdates`): App menu
     /// > Check for Updates… and Settings > General's update rows.
     let updater: any SoftwareUpdating
-    /// Publishes Quick Look's settings to its extensions; nil in tests and builds without an
+    /// Publishes Quick Look's settings to its extension; nil in tests and builds without an
     /// App Group.
     private(set) var quickLookPublisher: QuickLookConfigurationPublisher?
     /// The Settings window, created the first time it is shown and reused after.

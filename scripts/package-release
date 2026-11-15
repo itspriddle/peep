@@ -219,13 +219,10 @@ entitlements_with_group() {
   printf '%s\n' "$copy"
 }
 
-log "signing the Quick Look extensions"
-for extension in PeepQuickLook:Extensions/Preview/Preview.entitlements \
-  PeepThumbnail:Extensions/Thumbnail/Thumbnail.entitlements; do
-  appex="$app/Contents/PlugIns/${extension%%:*}.appex"
-  [[ -d "$appex" ]] || die "no ${extension%%:*}.appex in the app"
-  sign --entitlements "$(entitlements_with_group "${extension#*:}")" "$appex"
-done
+log "signing the Quick Look extension"
+quick_look="$app/Contents/PlugIns/PeepQuickLook.appex"
+[[ -d "$quick_look" ]] || die "no PeepQuickLook.appex in the app"
+sign --entitlements "$(entitlements_with_group Extensions/Preview/Preview.entitlements)" "$quick_look"
 sign --entitlements "$(entitlements_with_group App/Peep.entitlements)" "$app"
 
 # --- Verify signatures -------------------------------------------------------------------------
@@ -261,9 +258,9 @@ helper_identifier="$(codesign -d --verbose=2 "$app/Contents/Helpers/peep" 2>&1 |
 [[ "$helper_identifier" == "$bundle_id_base.cli" ]] || die "the helper's identifier is $helper_identifier"
 log "$macho_count Mach-O files: Developer ID, hardened runtime, secure timestamp"
 
-# Quick Look: the app and both extensions name the same team-prefixed App Group in Info.plist and
-# their signatures, and the extensions are sandboxed.
-for bundle in "$app" "$app/Contents/PlugIns/PeepQuickLook.appex" "$app/Contents/PlugIns/PeepThumbnail.appex"; do
+# Quick Look: the app and its extension name the same team-prefixed App Group in Info.plist and
+# their signatures, and the extension is sandboxed.
+for bundle in "$app" "$quick_look"; do
   name="${bundle#"$DMG_ROOT/"}"
   info_group="$(plutil -extract PeepAppGroup raw "$bundle/Contents/Info.plist" 2> /dev/null || true)"
   [[ "$info_group" == "$app_group" ]] || die "PeepAppGroup is '$info_group', expected $app_group: $name"
@@ -274,7 +271,7 @@ for bundle in "$app" "$app/Contents/PlugIns/PeepQuickLook.appex" "$app/Contents/
       || die "not sandboxed: $name"
   fi
 done
-log "Quick Look extensions: sandboxed, App Group $app_group"
+log "Quick Look extension: sandboxed, App Group $app_group"
 
 # --- DMG ---------------------------------------------------------------------------------------
 

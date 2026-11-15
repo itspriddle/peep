@@ -1030,11 +1030,12 @@ A running list of what 1.0 includes, in rough priority order. Each becomes its o
   HTML is always sanitized (a processor-output allowlist that adds `class`, disabled task-list
   checkboxes, and `section`), and it falls back to Peep's renderer with a bar when it fails.
   Settings > Markdown > Custom processor; `peep --processor PATH --processor-arg ARG`
-- **Quick Look (in progress):** preview (space bar, Finder's preview pane) and Finder
-  thumbnails of Markdown files, sandboxed, with the fixed safety settings in VISION. Settings >
+- **Quick Look (in progress):** preview of Markdown files (space bar, Finder's preview pane and
+  gallery view), sandboxed, with the fixed safety settings in VISION. Settings >
   General > Quick Look theme (default: same as the default theme; a document's `peep.theme`
   wins); Settings > Markdown's flavor, frontmatter, and built-in preprocessors apply; local
-  images are placeholders
+  images are placeholders. No thumbnails: macOS 27 never calls a third-party Markdown
+  thumbnail extension (FB24481377)
 
 ## Process
 
