@@ -138,6 +138,125 @@ Plain code block without a language, with a long line that should scroll horizon
 }
 ```
 
+## Models
+
+```stl
+solid house
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 2 0 0
+      vertex 2 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 2 0 1
+      vertex 1 0 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 1.6
+      vertex 0 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 3 0
+      vertex 2 3 1
+      vertex 2 3 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 3 0
+      vertex 1 3 1.6
+      vertex 2 3 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 3 0
+      vertex 0 3 1
+      vertex 1 3 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 2 3 0
+      vertex 2 0 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 0 3 0
+      vertex 2 3 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 0
+      vertex 2 3 1
+      vertex 2 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 0
+      vertex 2 3 0
+      vertex 2 3 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 1
+      vertex 1 3 1.6
+      vertex 1 0 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 1
+      vertex 2 3 1
+      vertex 1 3 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 1 0 1.6
+      vertex 0 3 1
+      vertex 0 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 1 0 1.6
+      vertex 1 3 1.6
+      vertex 0 3 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 1
+      vertex 0 3 0
+      vertex 0 0 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 1
+      vertex 0 3 1
+      vertex 0 3 0
+    endloop
+  endfacet
+endsolid house
+```
+
 ## Tables
 
 | Left | Center | Right | Code |
