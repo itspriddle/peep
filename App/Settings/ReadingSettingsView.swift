@@ -11,7 +11,7 @@ struct ReadingSettingsView: View {
             Section {
                 Toggle(
                     "Highlight changes when a file is saved",
-                    isOn: Binding(get: { model.highlightsChanges }, set: model.setHighlightsChanges)
+                    isOn: binding(\.highlightsChanges, model.setHighlightsChanges)
                 )
                 .accessibilityIdentifier("settings-highlight-changes")
                 note(
@@ -24,6 +24,13 @@ struct ReadingSettingsView: View {
         .padding(20)
         .frame(width: 480)
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// A binding that reads the model's property and changes it through `set`.
+    private func binding<Value>(
+        _ keyPath: KeyPath<SettingsModel, Value>, _ set: @escaping (Value) -> Void
+    ) -> Binding<Value> {
+        Binding(get: { model[keyPath: keyPath] }, set: set)
     }
 
     /// Secondary text under a control.
