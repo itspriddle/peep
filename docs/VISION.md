@@ -66,7 +66,7 @@ editor or a browser.
      turned on in `RenderOptions.builtInPreprocessors`, in one fixed order whatever enabled
      them: alerts (#52), wiki links (#53), emoji shortcodes.
   6. **HTML:** draw diagrams (M7, `RenderOptions.diagrams`: ` ```geojson ` and ` ```topojson `
-     blocks as static SVG maps), sanitize raw HTML, collect headings and anchors, highlight code
+     blocks as static SVG maps, ` ```stl ` blocks as shaded SVG models), sanitize raw HTML, collect headings and anchors, highlight code
      (not diagram blocks), write markup. The word count reads the tree after diagrams, so a
      drawn block has no words.
 
@@ -147,13 +147,20 @@ editor or a browser.
   `SyntaxHighlighter` protocol. The language comes only from the info string's first word (no
   auto-detection, like GitHub).
 - **Diagrams (M7):** also at render time, in `PeepCore/Diagrams`, in pure Swift: a block whose
-  language is a `DiagramKind` (` ```geojson `, ` ```topojson `) becomes a
+  language is a `DiagramKind` (` ```geojson `, ` ```topojson `, ` ```stl `) becomes a
   `<figure class="peep-diagram peep-diagram-<kind>">` holding an inline SVG (`role="img"`, an
   `aria-label`, and an `sr-only` caption), so the viewer, `peep --html`, Copy as HTML, and Quick
   Look get the same markup with no JavaScript. Maps are shapes only (no tiles), in Web Mercator
   (latitude clamped to ±85.0511) fitted to the shapes; shapes crossing the antimeridian aren't
   split. Paths carry classes (`peep-map-area`, `peep-map-line`, `peep-map-point`), never colors:
   `ThemeBase` styles them from `currentColor`, so every theme works light, dark, and print.
+  STL models (ASCII STL; binary can't be written in a code block) are a static shaded drawing,
+  not GitHub's interactive viewer: a fixed three-quarter isometric camera (from the front right,
+  above, Z up), orthographic and fitted; normals recomputed from the vertices (the file's are
+  ignored), back faces culled, facets painted back to front by centroid depth, and Lambert
+  shading against a fixed light quantized to 8 classes (`peep-stl-s0` darkest to `peep-stl-s7`),
+  which `ThemeBase` fills at fixed lightnesses in the text color's hue. Painter's order by
+  centroid can misdraw interpenetrating or badly overlapping facets; no depth buffer.
   Unreadable input, an empty drawing, or a block over a cap stays the plain code block.
 - **Display:** `WKWebView`. HTML + CSS is what makes CSS themes, print styles, and PDF export
   possible; SwiftUI-native renderers (e.g. Textual, MarkdownView) can't use stylesheets.
@@ -875,11 +882,13 @@ editor or a browser.
 - Diagrams (M7) are renderer output, so they are safe by construction rather than sanitized:
   every byte comes from `SVGWriter`, which writes only fixed element and attribute names,
   literals from Peep's source, escaped text, and finite numbers it formats itself. No input
-  string (a GeoJSON property, a TopoJSON object name) is ever written; they aren't even read.
+  string (a GeoJSON property, a TopoJSON object name, an STL `solid` name) is ever written;
+  they aren't even read.
   No tiles or other remote loads, and no script. JSON parsing is bounded: blocks over 1 MB
   aren't read, a document draws at most 200,000 coordinates (TopoJSON arcs count each time they
-  are used), and `GeometryCollection` nesting stops at 32 levels; past a cap the block stays
-  code.
+  are used, an STL facet costs 3), `GeometryCollection` nesting stops at 32 levels, and an STL
+  block holds at most 50,000 facets; past a cap the block stays code. STL is parsed line by
+  line with no recursion.
 - Links go through one tested navigation policy (`LinkPolicy` in `PeepCore`, #19), and nothing
   navigates the viewer away from the document: the only main-frame navigations allowed are the
   page loads the app starts. In-page fragments scroll via the app-script bridge (raw id, then

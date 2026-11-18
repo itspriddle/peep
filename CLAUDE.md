@@ -117,7 +117,11 @@ lock the build database.
     a case plus its `render(_:budget:)` branch. `SVGWriter` is the only markup source (fixed
     names, escaped text, `SVGNumber`s, `SVGPath`); never write an input string. Maps:
     `GeoJSON` / `TopoJSON` decode (via `JSONValues`) into `GeoGeometry`, `MapProjection` (Web
-    Mercator, fitted), `MapDiagram` (classed paths; colors in `ThemeBase`).
+    Mercator, fitted), `MapDiagram` (classed paths; colors in `ThemeBase`). STL (#116): `STL`
+    (ASCII, line-based, tolerant of case and whitespace, 50k facets; normals recomputed),
+    `STLProjection` (fixed isometric camera, fit, back-face culling, painter's sort, Lambert
+    shade in 8 buckets), `STLDiagram` (a `<path class="peep-stl-sN">` per run of one shade in
+    painter's order; colors in `ThemeBase`, `oklch(from currentColor …)`).
     `MarkdownNode.rewritingCodeBlocks` (AST) is the walk both code block passes share.
     Mermaid (#117) isn't a `DiagramKind`: `MermaidBlocks` only finds blocks (`mermaid`, any
     case) for `RenderedDocument.hasMermaidBlocks` (false with `diagrams` off); the HTML keeps

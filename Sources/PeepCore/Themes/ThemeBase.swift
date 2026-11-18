@@ -19,7 +19,7 @@
 /// - a drawn mermaid block's code (`pre[data-peep-diagram="rendered"]`, the app's
 ///   `MermaidDiagrams.js`) staying hidden behind its diagram (the error note's look is a default);
 
-/// - diagrams' look (`.peep-diagram`, the map classes; M7) is a default;
+/// - diagrams' look (`.peep-diagram`, the map and STL classes; M7) is a default;
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
 /// - structural print rules (#26, #38): light color scheme, no page background, full width,
 ///   nothing clipped, no anchor icons, sensible page breaks. External link targets written out
@@ -54,9 +54,9 @@ public enum ThemeBase {
         .markdown-alert > :last-child { margin-bottom: 0; }
         .markdown-alert-title { display: flex; align-items: center; font-weight: 600; line-height: 1.25; }
         .markdown-alert-title svg { flex: none; margin-right: 0.5em; fill: currentColor; }
-        /* Diagrams (M7): maps the renderer draws (`MapDiagram`, a `figure.peep-diagram` around an
-           inline SVG). Paths have classes, never colors: they take the text color, so every theme
-           works light, dark, and print. Themes may restyle all of it. */
+        /* Diagrams (M7): maps and STL models the renderer draws (`MapDiagram`, `STLDiagram`: a
+           `figure.peep-diagram` around an inline SVG). Paths have classes, never colors: they take
+           the text color, so every theme works light, dark, and print. Themes may restyle all of it. */
         .peep-diagram { margin: 0 0 16px; padding: 0; }
         .peep-diagram > svg {
           display: block; box-sizing: border-box; width: 100%; height: auto;
@@ -71,6 +71,11 @@ public enum ThemeBase {
           vector-effect: non-scaling-stroke;
         }
         .peep-map-point { fill: currentColor; fill-opacity: 0.8; stroke: none; }
+        /* STL shades, darkest (s0) to lit (s7): opaque, at a fixed lightness in the text color's
+           hue, so a model reads the same on a light or dark page and on paper (gray where relative
+           colors aren't supported). The stroke hides seams between facets. */
+        .peep-stl path { stroke-width: 0.75; stroke-linejoin: round; }
+        \(stlShadeRules)
         /* Wiki links (#53) to a missing page have no href, so themes style them as plain text
            (`a:not([href])`); a dashed underline keeps them distinguishable. */
         .wikilink-missing { border-bottom: 1px dashed; cursor: default; }
@@ -157,6 +162,18 @@ public enum ThemeBase {
           \(hidingRule(for: .light))
         }
         """
+
+    /// One rule per STL shade bucket (`STLDiagram.shadeClasses`): fill and stroke at that
+    /// bucket's lightness, gray first for engines without relative colors.
+    private static var stlShadeRules: String {
+        STLDiagram.shadeClasses.enumerated().map { index, name in
+            let lightness = "0.\(420 + 75 * index)"  // 0.42 to 0.945
+            let gray = "oklch(\(lightness) 0 0)"
+            let tinted = "oklch(from currentColor \(lightness) c h)"
+            return ".\(name) { fill: \(gray); stroke: \(gray); fill: \(tinted); stroke: \(tinted); }"
+        }
+        .joined(separator: "\n        ")
+    }
 
     /// Hides the images (and placeholders) meant only for the other appearance. More specific
     /// than the placeholder's protected `display`, so it wins within this layer.

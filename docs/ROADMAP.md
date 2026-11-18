@@ -1024,7 +1024,12 @@ within the security model: tracking issue #118, integration branch `feature/m7-d
   Caps: 1 MB per block, 200,000 coordinates per document; over a cap or unreadable, the block
   stays code. Also the plumbing the other diagram kinds use (`DiagramKind`,
   `DiagramRendering`, `SVGWriter`).
-- ASCII STL (#116): a static shaded SVG, no interactive viewer; plugs into the same plumbing.
+- ASCII STL (#116): ` ```stl ` blocks as a static shaded SVG, no interactive viewer, through the
+  same plumbing (`DiagramKind.stl`). `STL` parses line by line (keywords in any case, any
+  whitespace, CRLF, several solids; the file's normals ignored), `STLProjection` draws a fixed
+  three-quarter isometric view fitted to the model, culls back faces, sorts back to front, and
+  quantizes Lambert shading to 8 classes that `ThemeBase` colors from the text color. Caps:
+  50,000 facets per block, plus the shared 1 MB and coordinate budget (3 per facet).
 - Mermaid (#117): viewer only. ` ```mermaid ` blocks drawn by a vendored mermaid (12.3.0,
   `make vendor-mermaid`) in its own content world, `peep-diagrams`, with no message handlers,
   under the unchanged CSP (VISION, security model). Only pages with mermaid blocks load it;
