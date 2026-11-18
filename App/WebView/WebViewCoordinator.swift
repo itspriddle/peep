@@ -44,7 +44,7 @@ final class WebViewCoordinator: NSObject {
     private var themeScriptInFlight: Task<Bool, any Error>?
     /// Counts full loads, so a swap that finishes after a new load started doesn't claim the new
     /// page holds its theme.
-    private var pageGeneration = 0
+    private(set) var pageGeneration = 0
 
     // MARK: Links (#19, `WebViewCoordinator+Navigation.swift`)
 
@@ -66,6 +66,24 @@ final class WebViewCoordinator: NSObject {
     /// it before the first load; after a change, `applyCollapsibleSectionsToPage()` updates the
     /// loaded page.
     var collapsibleSections = false
+
+    // MARK: Diagrams (#117, `WebViewCoordinator+Diagrams.swift`)
+
+    /// Whether mermaid blocks are drawn as diagrams; when off they stay code blocks. Changing
+    /// it updates the loaded page. (Settings > Markdown's "Render diagrams", #115, sets it.)
+    var rendersDiagrams = true {
+        didSet {
+            if rendersDiagrams != oldValue {
+                rendersDiagramsDidChange()
+            }
+        }
+    }
+    /// The loaded page's diagrams: whether it has mermaid blocks, whether mermaid is in it yet,
+    /// and in which colors they were drawn.
+    var diagrams = DiagramPageState()
+    /// The diagram work last started (load, swap, theme, appearance), if any. Each waits for
+    /// the one before it. The window awaits it before scrolling a mermaid page; tests too.
+    var pendingDiagramRender: Task<Void, Never>?
 
     /// Find in page (#25, `WebViewCoordinator+Find.swift`): the find bar's state and commands,
     /// sharing the system find pasteboard (#42).
@@ -101,6 +119,7 @@ final class WebViewCoordinator: NSObject {
         webView.isLocalImageUnderContextMenu = { [weak self] in self?.contextMenuLocalImage != nil }
         webView.shareItemsHandler = { [weak self] in self?.contextMenuShareItems() ?? [] }
         webView.dragPasteboardHandler = { [weak self] pasteboard in self?.rewriteDocumentLinks(on: pasteboard) }
+        webView.appearanceDidChange = { [weak self] in self?.scheduleDiagramRender() }
         webView.configuration.userContentController.add(
             ContextMenuTargetMessageHandler(coordinator: self), contentWorld: AppScripts.world,
             name: ContextMenuTargetMessageHandler.name)
@@ -175,6 +194,9 @@ final class WebViewCoordinator: NSObject {
         if collapsibleSections {
             try await applyCollapsibleSectionsToPage()
         }
+        // Only a page with mermaid blocks loads mermaid (in the background).
+        diagrams.hasMermaidBlocks = page.hasMermaidBlocks
+        scheduleDiagramRender()
     }
 
     /// Loads a complete HTML page and waits for it to finish. `html` must be a page built by
@@ -182,6 +204,7 @@ final class WebViewCoordinator: NSObject {
     func load(html: String, baseURL: URL?) async throws {
         loadedTheme = nil
         pageGeneration += 1
+        diagrams = DiagramPageState()
         expectedLoadURL = baseURL ?? URL(string: "about:blank")
         LaunchTiming.mark("loadStarted")
         guard let navigation = webView.loadHTMLString(html, baseURL: baseURL) else {
@@ -227,6 +250,8 @@ final class WebViewCoordinator: NSObject {
             guard try await task.value else {
                 return
             }
+            // A theme of another darkness redraws the diagrams in its colors.
+            scheduleDiagramRender()
         }
     }
 

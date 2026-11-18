@@ -237,6 +237,11 @@ final class DocumentWindowController: NSWindowController {
                     isWaitingForFirstPage = false
                     updateRenderProgress()
                 }
+                // Diagrams change the page's layout: draw them before scrolling and marking
+                // changes (#117). Pages without mermaid blocks don't wait.
+                if page.hasMermaidBlocks {
+                    await coordinator.pendingDiagramRender?.value
+                }
                 await scrollToPendingFragment()
                 await scrollToPendingSourceLine()
                 await showChanges(changes)

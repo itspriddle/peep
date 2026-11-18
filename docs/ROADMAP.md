@@ -1010,6 +1010,14 @@ tag-driven workflow. Verified by hand:
   the plan).
 - The DMG has no custom background or layout.
 
+## M7: Diagrams
+
+- **Mermaid in the viewer (#117):** ` ```mermaid ` blocks drawn by a vendored mermaid (12.3.0,
+  `make vendor-mermaid`) in its own content world, `peep-diagrams`, with no message handlers,
+  under the unchanged CSP (VISION, security model). Only pages with mermaid blocks load it;
+  redrawn after live reloads and on theme or appearance changes; a block it can't draw stays
+  code with a note. `peep --html`, Copy as HTML, and Quick Look keep the code block.
+
 ## 1.0
 
 A running list of what 1.0 includes, in rough priority order. Each becomes its own milestone
