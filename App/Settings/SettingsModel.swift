@@ -22,6 +22,7 @@ import PeepCore
 /// | Default flavor | `MarkdownSettings.defaultFlavorID` | every document, live (#55) |
 /// | Frontmatter display | `MarkdownSettings.frontmatterDisplay` | every document, live (#55) |
 /// | Built-in preprocessors | `MarkdownSettings.builtInPreprocessors` | every document, live (#55) |
+/// | Render diagrams | `MarkdownSettings.rendersDiagrams` | every document, live (M7) |
 /// | Custom preprocessor | `CustomProgramSettings.preprocessor`, via `customPreprocessor` | every document, live (#57) |
 /// | Custom processor | `CustomProgramSettings.processor`, via `customProcessor` | every document, live (#106) |
 /// | Automatic update checks and downloads | Sparkle's updater, via `updater` (`SoftwareUpdating`) | the app (#81) |
@@ -97,6 +98,8 @@ final class SettingsModel: NSObject {
     private(set) var frontmatterDisplay = FrontmatterDisplay.hidden
     /// The built-in preprocessors that are on (a subset of `optionalPreprocessors`).
     private(set) var builtInPreprocessors: Set<MarkdownTransform> = []
+    /// Whether geojson, topojson, and stl blocks are drawn (maps and models).
+    private(set) var rendersDiagrams = true
     /// Whether this build checks for updates at all (`SoftwareUpdates`).
     private(set) var isUpdaterActive = false
     private(set) var automaticallyChecksForUpdates = false
@@ -186,6 +189,7 @@ final class SettingsModel: NSObject {
         defaultFlavorID = markdownSettings.defaultFlavorID
         frontmatterDisplay = markdownSettings.frontmatterDisplay
         builtInPreprocessors = markdownSettings.builtInPreprocessors
+        rendersDiagrams = markdownSettings.rendersDiagrams
         customPreprocessor.refresh()
         customProcessor.refresh()
         isUpdaterActive = updater.isActive
@@ -315,6 +319,13 @@ final class SettingsModel: NSObject {
             enabled.remove(preprocessor)
         }
         markdownSettings.builtInPreprocessors = enabled
+        refresh()
+    }
+
+    /// Draws geojson, topojson, and stl blocks as maps and models (or leaves them code). Open documents render
+    /// again in place.
+    func setRendersDiagrams(_ renders: Bool) {
+        markdownSettings.rendersDiagrams = renders
         refresh()
     }
 

@@ -56,6 +56,7 @@ extension WebViewCoordinator {
             let result = try await callBridge(
                 "return peep.replaceContent(html, title);", arguments: ["html": page.body, "title": page.title])
             if (result as? NSNumber)?.boolValue == true {
+                contentDidSwap(to: page)
                 return
             }
         }
@@ -71,6 +72,7 @@ extension WebViewCoordinator {
             let result = try await callBridge(
                 "return peep.updateContent(html, title);", arguments: ["html": page.body, "title": page.title])
             if (result as? NSNumber)?.boolValue == true {
+                contentDidSwap(to: page)
                 return
             }
         }

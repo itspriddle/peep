@@ -17,6 +17,7 @@ extension RenderOptions {
         options.appliesDocumentOverrides = false
         options.builtInPreprocessors = []
         options.detectsFrontmatter = false
+        options.diagrams = false
         options.gfmMarkup = .cmark
         options.headingAnchors = false
         options.highlighting = false

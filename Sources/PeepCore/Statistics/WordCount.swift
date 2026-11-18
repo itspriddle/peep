@@ -2,7 +2,7 @@ import Foundation
 
 /// The number of words a reader sees in a rendered document: the text of paragraphs, headings,
 /// lists, tables, block quotes, alerts, footnotes, link and wiki link labels, inline code, and code
-/// blocks. Frontmatter (not in the tree), link destinations, image alt text, raw HTML, emoji,
+/// blocks (not those drawn as diagrams, `CodeBlock.diagramSVG`). Frontmatter (not in the tree), link destinations, image alt text, raw HTML, emoji,
 /// footnote reference numbers, and renderer-written labels (alert titles) are not words.
 ///
 /// Words are found with Foundation's word segmentation (`enumerateSubstrings(options: .byWords)`),
@@ -30,7 +30,9 @@ public enum WordCount {
                 text += string
             case .codeBlock(let block):
                 text += "\n"
-                text += block.literal
+                if block.diagramSVG == nil {
+                    text += block.literal
+                }
                 continue
             case .image, .htmlBlock, .htmlInline, .footnoteReference:
                 continue

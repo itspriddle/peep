@@ -172,6 +172,9 @@ struct RenderedPage: Equatable, Sendable {
     let documentThemeID: String?
     /// The words in the rendered body (`RenderedDocument.wordCount`), for the status bar.
     let wordCount: Int
+    /// Whether the body has mermaid blocks (`RenderedDocument.hasMermaidBlocks`): only then does
+    /// a window load mermaid into the page (`WebViewCoordinator+Diagrams.swift`, #117).
+    let hasMermaidBlocks: Bool
 
     init(
         rendered: RenderedDocument, fallbackTitle: String, contentSecurityPolicy: ContentSecurityPolicy = .viewer
@@ -183,6 +186,7 @@ struct RenderedPage: Equatable, Sendable {
         self.blockedRemoteImages = rendered.blockedRemoteImages
         self.documentThemeID = rendered.overrides.theme
         self.wordCount = rendered.wordCount
+        self.hasMermaidBlocks = rendered.hasMermaidBlocks
     }
 
     /// The complete HTML page (`HTMLDocument`: the CSP, `theme`, `userStyle`, body). The

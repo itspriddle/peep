@@ -40,61 +40,17 @@ struct CodeHighlighting {
         return HighlightValidator.validated(html, source: block.literal)
     }
 
-    private struct Frame {
-        var node: MarkdownNode
-        var nextChild = 0
-        var children: [MarkdownNode] = []
-        var changed = false
-
-        init(_ node: MarkdownNode) {
-            self.node = node
-        }
-    }
-
     /// Returns `root` with `CodeBlock.highlightedHTML` set on every block that highlights.
-    /// Walks block containers only (code blocks never appear inside inlines), with an explicit
-    /// stack, and rebuilds only the containers that changed.
+    /// Blocks drawn as diagrams (`CodeBlock.diagramSVG`, `DiagramRendering`, which runs first)
+    /// are left alone and cost nothing.
     mutating func apply(to root: MarkdownNode) -> MarkdownNode {
-        if case .codeBlock(var block) = root.kind {
-            block.highlightedHTML = highlight(block)
-            var node = root
-            node.kind = .codeBlock(block)
-            return node
-        }
-        var stack = [Frame(root)]
-        while let top = stack.indices.last {
-            guard stack[top].nextChild < stack[top].node.children.count else {
-                let frame = stack.removeLast()
-                var node = frame.node
-                if frame.changed {
-                    node.children = frame.children
-                }
-                guard !stack.isEmpty else {
-                    return node
-                }
-                stack[stack.count - 1].children.append(node)
-                stack[stack.count - 1].changed = stack[stack.count - 1].changed || frame.changed
-                continue
+        root.rewritingCodeBlocks { block in
+            guard block.diagramSVG == nil, let html = highlight(block) else {
+                return nil
             }
-            let child = stack[top].node.children[stack[top].nextChild]
-            stack[top].nextChild += 1
-            switch child.kind {
-            case .codeBlock(var block):
-                block.highlightedHTML = highlight(block)
-                if block.highlightedHTML != nil {
-                    var node = child
-                    node.kind = .codeBlock(block)
-                    stack[top].children.append(node)
-                    stack[top].changed = true
-                } else {
-                    stack[top].children.append(child)
-                }
-            case let kind where kind.isBlockContainer:
-                stack.append(Frame(child))
-            default:
-                stack[top].children.append(child)
-            }
+            var block = block
+            block.highlightedHTML = html
+            return block
         }
-        return root
     }
 }
