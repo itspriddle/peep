@@ -61,3 +61,135 @@ In a list:
 - ```geojson
   {"type": "MultiPoint", "coordinates": [[-0.13, 51.51], [2.35, 48.86], [13.4, 52.52]]}
   ```
+
+An ASCII STL model (a house), drawn as a shaded SVG; its name never reaches the output:
+
+```stl
+solid house <script>alert(1)</script>
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 2 0 0
+      vertex 2 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 2 0 1
+      vertex 1 0 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 1.6
+      vertex 0 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 3 0
+      vertex 2 3 1
+      vertex 2 3 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 3 0
+      vertex 1 3 1.6
+      vertex 2 3 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 3 0
+      vertex 0 3 1
+      vertex 1 3 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 2 3 0
+      vertex 2 0 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 0 3 0
+      vertex 2 3 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 0
+      vertex 2 3 1
+      vertex 2 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 0
+      vertex 2 3 0
+      vertex 2 3 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 1
+      vertex 1 3 1.6
+      vertex 1 0 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 2 0 1
+      vertex 2 3 1
+      vertex 1 3 1.6
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 1 0 1.6
+      vertex 0 3 1
+      vertex 0 0 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 1 0 1.6
+      vertex 1 3 1.6
+      vertex 0 3 1
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 1
+      vertex 0 3 0
+      vertex 0 0 0
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0 1
+      vertex 0 3 1
+      vertex 0 3 0
+    endloop
+  endfacet
+endsolid house
+```
+
+Not valid STL (a facet with two vertices), so it stays code:
+
+```stl
+solid broken
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 0
+    endloop
+  endfacet
+endsolid broken
+```

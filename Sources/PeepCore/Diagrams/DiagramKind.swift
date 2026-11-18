@@ -1,5 +1,5 @@
 /// The fenced code block languages Peep draws as diagrams (M7), named by the info string's first
-/// word, case-insensitive (` ```geojson `, ` ```TopoJSON `).
+/// word, case-insensitive (` ```geojson `, ` ```TopoJSON `, ` ```stl `).
 ///
 /// A kind is one case here plus its `render(_:budget:)` branch: `DiagramRendering` handles the
 /// caps and the AST, `HTMLRenderer` the `<figure>` around the SVG, `ThemeBase` the styling of
@@ -7,6 +7,8 @@
 enum DiagramKind: String, CaseIterable, Sendable {
     case geojson
     case topojson
+    /// ASCII STL (#116); binary STL can't be written in a code block.
+    case stl
 
     /// The kind `language` names, or `nil` for any other language.
     init?(language: String?) {
@@ -26,11 +28,14 @@ enum DiagramKind: String, CaseIterable, Sendable {
         switch self {
         case .geojson: "GeoJSON map"
         case .topojson: "TopoJSON map"
+        case .stl: "STL model"
         }
     }
 
     /// The `<svg>` for `source`, or `nil` to show the block as code: unreadable input, an empty
-    /// drawing, or more than `budget.coordinates` coordinates. Charges `budget` only on success.
+    /// drawing, or more than `budget.coordinates` coordinates (an STL facet costs its three
+    /// vertices, and a block holds at most `STL.maximumTriangles`). Charges `budget` only on
+    /// success.
     func render(_ source: String, budget: inout DiagramBudget) -> String? {
         switch self {
         case .geojson, .topojson:
@@ -43,6 +48,15 @@ enum DiagramKind: String, CaseIterable, Sendable {
                 return nil
             }
             budget.coordinates = limit
+            return svg
+        case .stl:
+            let limit = min(STL.maximumTriangles, budget.coordinates / STL.coordinatesPerTriangle)
+            guard let triangles = try? STL.decode(source, triangleLimit: limit),
+                let svg = STLDiagram.svg(for: triangles, label: label)
+            else {
+                return nil
+            }
+            budget.coordinates -= triangles.count * STL.coordinatesPerTriangle
             return svg
         }
     }

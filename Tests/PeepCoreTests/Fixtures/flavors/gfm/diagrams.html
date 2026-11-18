@@ -12,3 +12,15 @@
 <figure class="peep-diagram peep-diagram-geojson"><svg class="peep-map" viewBox="0 0 800 400" role="img" aria-label="GeoJSON map"><path class="peep-map-point" d="M11 129.1a5 5 0 1 0 10 0a5 5 0 1 0 -10 0ZM151.8 364.1a5 5 0 1 0 10 0a5 5 0 1 0 -10 0ZM779 35.9a5 5 0 1 0 10 0a5 5 0 1 0 -10 0Z"/></svg><figcaption class="sr-only">GeoJSON map</figcaption></figure>
 </li>
 </ul>
+<p>An ASCII STL model (a house), drawn as a shaded SVG; its name never reaches the output:</p>
+<figure class="peep-diagram peep-diagram-stl"><svg class="peep-stl" viewBox="0 0 800 400" role="img" aria-label="STL model"><path class="peep-stl-s5" d="M267.2 169.3L532.8 16L444.3 26.2Z"/><path class="peep-stl-s1" d="M355.7 384L621.3 230.7L621.3 128.4Z"/><path class="peep-stl-s5" d="M267.2 169.3L444.3 26.2L178.7 179.6Z"/><path class="peep-stl-s7" d="M355.7 281.8L621.3 128.4L532.8 16Z"/><path class="peep-stl-s3" d="M178.7 281.8L267.2 169.3L178.7 179.6ZM178.7 281.8L355.7 384L355.7 281.8Z"/><path class="peep-stl-s1" d="M355.7 384L621.3 128.4L355.7 281.8Z"/><path class="peep-stl-s7" d="M355.7 281.8L532.8 16L267.2 169.3Z"/><path class="peep-stl-s3" d="M178.7 281.8L355.7 281.8L267.2 169.3Z"/></svg><figcaption class="sr-only">STL model</figcaption></figure>
+<p>Not valid STL (a facet with two vertices), so it stays code:</p>
+<pre><code class="language-stl">solid broken
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 0
+      vertex 1 0 0
+    endloop
+  endfacet
+endsolid broken
+</code></pre>
