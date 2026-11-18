@@ -17,6 +17,7 @@ import PeepCore
 /// | Custom content width | `ContentWidthSettings.isCustomWidthEnabled`, `customWidthPoints` | every window, live |
 /// | Collapsible sections | `CollapsibleSectionsSettings.isEnabled` | every window, live |
 /// | Highlight changes on save (Reading pane) | `ChangeHighlightsSettings.isEnabled` | every window, next reload |
+/// | Scroll to the first change (Reading pane) | `ChangeHighlightsSettings.scrollsToChanges` | every window, next reload |
 /// | Default Markdown viewer | `DefaultViewer` (Launch Services) | system-wide |
 /// | Default flavor | `MarkdownSettings.defaultFlavorID` | every document, live (#55) |
 /// | Frontmatter display | `MarkdownSettings.frontmatterDisplay` | every document, live (#55) |
@@ -82,6 +83,8 @@ final class SettingsModel: NSObject {
     private(set) var collapsesSections = false
     /// Whether a live reload marks what changed, in every window.
     private(set) var highlightsChanges = false
+    /// Whether a live reload scrolls to its first change (while `highlightsChanges`).
+    private(set) var scrollsToChanges = false
     private(set) var showsOutlineInNewWindows = false
     private(set) var pinsNewWindows = false
     private(set) var isDefaultViewer = false
@@ -175,6 +178,7 @@ final class SettingsModel: NSObject {
         customWidthPoints = contentWidthSettings.customWidthPoints
         collapsesSections = collapsibleSectionsSettings.isEnabled
         highlightsChanges = changeHighlightsSettings.isEnabled
+        scrollsToChanges = changeHighlightsSettings.scrollsToChanges
         showsOutlineInNewWindows = outlinePreference.showsOutlineInNewWindows
         pinsNewWindows = pinPreference.pinsNewWindows
         isDefaultViewer = defaultViewerOffer.viewer.isDefault
@@ -265,6 +269,12 @@ final class SettingsModel: NSObject {
     /// Live reloads mark what changed (or stop), in every window; off clears open windows' marks.
     func setHighlightsChanges(_ highlights: Bool) {
         changeHighlightsSettings.isEnabled = highlights
+        refresh()
+    }
+
+    /// Live reloads scroll to their first change (or stop), in every window, while highlights are on.
+    func setScrollsToChanges(_ scrolls: Bool) {
+        changeHighlightsSettings.scrollsToChanges = scrolls
         refresh()
     }
 

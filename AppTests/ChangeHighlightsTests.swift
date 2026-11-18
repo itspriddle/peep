@@ -15,10 +15,28 @@ final class ChangeHighlightsTests: DocumentWindowTestCase {
     /// 200 one-line paragraphs: paragraph N is on line 2N - 1.
     static let longSource = (1...200).map { "Paragraph \($0)." }.joined(separator: "\n\n") + "\n"
 
-    func highlightSettings(enabled: Bool = true) -> ChangeHighlightsSettings {
+    func highlightSettings(enabled: Bool = true, scrolls: Bool = false) -> ChangeHighlightsSettings {
         let settings = ChangeHighlightsSettings(defaults: defaults, isPersistent: true)
         settings.isEnabled = enabled
+        settings.scrollsToChanges = scrolls
         return settings
+    }
+
+    func scrollY(_ controller: DocumentWindowController) async throws -> Double {
+        (try await evaluate("return window.scrollY;", in: controller) as? NSNumber)?.doubleValue ?? 0
+    }
+
+    /// Whether the paragraph containing `text` is wholly inside the viewport.
+    func isInView(_ text: String, in controller: DocumentWindowController) async throws -> Bool {
+        let script = """
+            const block = [...document.querySelectorAll('article p')].find((p) => p.textContent.includes(text));
+            if (!block) { return false; }
+            const rect = block.getBoundingClientRect();
+            return rect.top >= 0 && rect.bottom <= window.innerHeight;
+            """
+        let result = try await controller.coordinator.webView.callAsyncJavaScript(
+            script, arguments: ["text": text], in: nil, contentWorld: AppScripts.world)
+        return (result as? NSNumber)?.boolValue == true
     }
 
     func evaluate(_ script: String, in controller: DocumentWindowController) async throws -> Any? {
@@ -76,6 +94,29 @@ final class ChangeHighlightsTests: DocumentWindowTestCase {
         #expect(!settings.isEnabled)
     }
 
+    @Test("scrolling to changes is off by default, persists, and applies only with highlights on")
+    func scrollSettingPersists() {
+        let settings = highlightSettings(enabled: false)
+        #expect(!settings.scrollsToChanges)
+        var posts = 0
+        let token = NotificationCenter.default.addObserver(
+            forName: ChangeHighlightsSettings.didChangeNotification, object: settings, queue: nil
+        ) { _ in posts += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        settings.scrollsToChanges = true
+        settings.scrollsToChanges = true
+        #expect(posts == 1, "setting the same value posts nothing")
+        #expect(defaults.bool(forKey: ChangeHighlightsSettings.scrollKey))
+        #expect(!settings.scrollsOnChange, "highlights are off")
+        settings.isEnabled = true
+        #expect(settings.scrollsOnChange)
+        settings.scrollsToChanges = false
+        #expect(defaults.object(forKey: ChangeHighlightsSettings.scrollKey) == nil, "off removes the key")
+        defaults.set("yes", forKey: ChangeHighlightsSettings.scrollKey)
+        #expect(!settings.scrollsToChanges)
+    }
+
     @Test("off, a live reload marks nothing")
     func offMarksNothing() async throws {
         defer { closeAll() }
@@ -116,10 +157,45 @@ final class ChangeHighlightsTests: DocumentWindowTestCase {
             Self.longSource.replacingOccurrences(of: "Paragraph 190.", with: "Paragraph 190, edited."), to: document)
         try await until("the count") { controller.statusBar.offScreenChanges == OffScreenChanges(above: 0, below: 1) }
 
+        #expect(try await scrollY(controller) == 0, "without the scroll setting the view stays put")
+
         controller.scrollToNextChange(nil)
         try await until("the change is in view") { controller.statusBar.offScreenChanges == nil }
-        let scrollY = try await evaluate("return window.scrollY;", in: controller) as? NSNumber
-        #expect((scrollY?.doubleValue ?? 0) > 0)
+        #expect(try await scrollY(controller) > 0)
+    }
+
+    @Test("with scrolling on, a reload scrolls to the first change out of view")
+    func scrollsToFirstChange() async throws {
+        defer { closeAll() }
+        let (document, controller) = try await open(
+            Self.longSource, changeHighlightsSettings: highlightSettings(scrolls: true))
+        document.showWindows()
+        document.startLiveReload()
+
+        let edited = Self.longSource
+            .replacingOccurrences(of: "Paragraph 190.", with: "Paragraph 190, edited.")
+            .replacingOccurrences(of: "Paragraph 120.", with: "Paragraph 120, edited.")
+        try await save(edited, to: document)
+        try await until("the first change is in view") {
+            try await isInView("Paragraph 120, edited.", in: controller)
+        }
+        #expect(try await !isInView("Paragraph 190, edited.", in: controller))
+    }
+
+    @Test("with scrolling on, a reload with a change already in view doesn't scroll")
+    func staysWithChangeInView() async throws {
+        defer { closeAll() }
+        let (document, controller) = try await open(
+            Self.longSource, changeHighlightsSettings: highlightSettings(scrolls: true))
+        document.showWindows()
+        document.startLiveReload()
+
+        let edited = Self.longSource
+            .replacingOccurrences(of: "Paragraph 190.", with: "Paragraph 190, edited.")
+            .replacingOccurrences(of: "Paragraph 2.", with: "Paragraph 2, edited.")
+        try await save(edited, to: document)
+        try await until("the count") { controller.statusBar.offScreenChanges == OffScreenChanges(above: 0, below: 1) }
+        #expect(try await scrollY(controller) == 0)
     }
 
     @Test("a mark fades once it has been on screen")

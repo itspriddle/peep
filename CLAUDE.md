@@ -200,7 +200,10 @@ lock the build database.
     `SectionsMenu`. The `data-peep-folded` rule is in `ThemeBase`.
   - `ChangeHighlights/`: `ChangeHighlightsSettings` (Settings > Reading's "Highlight changes
     when a file is saved", `Settings/ReadingSettingsView`, off by default;
-    `-PeepUITestChangeHighlights YES` under UI tests).
+    `-PeepUITestChangeHighlights YES` under UI tests; and its supplemental "Scroll to the first
+    change", `scrollsToChanges`, applied only while highlights are on, `scrollsOnChange`;
+    `-PeepUITestScrollToChanges YES`: after marking, `peepChanges.scrollToFirst` scrolls to the
+    first mark unless one is on screen).
     While it is on, `LiveReloader` diffs the old and new `renderedSource` off the main actor
     (not for a custom processor's page, which has no source lines) and passes
     `MarkdownDocument.setContent(_:changes:)` a `SourceChanges` (`contentChanges`; any other

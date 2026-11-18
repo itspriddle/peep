@@ -33,6 +33,8 @@ import Foundation
 ///   (`CollapsibleSectionsSettings`, in memory). Without it a UI-test launch has them off.
 /// - `-PeepUITestChangeHighlights YES`: start with "Highlight changes when a file is saved" on
 ///   (`ChangeHighlightsSettings`, in memory). Without it a UI-test launch has it off.
+/// - `-PeepUITestScrollToChanges YES`: start with "Scroll to the first change" on
+///   (`ChangeHighlightsSettings.scrollsToChanges`, in memory). Without it a UI-test launch has it off.
 ///
 /// UI-test launches (and hosted unit tests) never add to Open Recent (`DocumentController`).
 enum UITestHooks {
@@ -55,6 +57,8 @@ enum UITestHooks {
         static let collapsibleSectionsKey = "PeepUITestCollapsibleSections"
         /// Launch argument (a `UserDefaults` key): YES starts with change highlights on.
         static let changeHighlightsKey = "PeepUITestChangeHighlights"
+        /// Launch argument (a `UserDefaults` key): YES starts with scrolling to changes on.
+        static let scrollToChangesKey = "PeepUITestScrollToChanges"
     #endif
 
     /// Whether a UI test launched the app. Always `false` in Release builds.
@@ -174,6 +178,15 @@ enum UITestHooks {
     static var enablesChangeHighlights: Bool {
         #if DEBUG
             isUITesting && UserDefaults.standard.bool(forKey: changeHighlightsKey)
+        #else
+            false
+        #endif
+    }
+
+    /// Whether a UI test asked for scrolling to changes on. Always `false` in Release builds.
+    static var scrollsToChanges: Bool {
+        #if DEBUG
+            isUITesting && UserDefaults.standard.bool(forKey: scrollToChangesKey)
         #else
             false
         #endif
