@@ -108,6 +108,16 @@ lock the build database.
     the rendered sources after trimming common lines, blank lines never reported, a middle past
     `lineDiffLimit` reported as one range).
   - `Highlighting/`: highlight.js in JavaScriptCore; `HighlightValidator` re-serializes its output.
+  - `Diagrams/` (M7, `RenderOptions.diagrams`): fenced blocks drawn as static SVG in pure Swift.
+    `DiagramRendering` is the AST pass (run by `HTMLRenderer.drawingDiagrams(in:)` before
+    highlighting and the word count; 1 MB per block, 200k coordinates per document) setting the
+    internal `CodeBlock.diagramSVG`; `HTMLRenderer+Diagrams` writes the `figure.peep-diagram`.
+    `DiagramKind` names the languages (first info-string word, case-insensitive): a new kind is
+    a case plus its `render(_:budget:)` branch. `SVGWriter` is the only markup source (fixed
+    names, escaped text, `SVGNumber`s, `SVGPath`); never write an input string. Maps:
+    `GeoJSON` / `TopoJSON` decode (via `JSONValues`) into `GeoGeometry`, `MapProjection` (Web
+    Mercator, fitted), `MapDiagram` (classed paths; colors in `ThemeBase`).
+    `MarkdownNode.rewritingCodeBlocks` (AST) is the walk both code block passes share.
   - `AppOpening/`: what the CLI and the app agree on (M5; untrusted on the app's side).
     `AppOpenEvent` builds and reads the Open Documents event and its parameters
     (`AppOpenParameters`: `PepT` theme, `PepW` wait token in `+Wait`, with the
@@ -150,6 +160,7 @@ lock the build database.
     viewer; stores nothing itself), and `GeneralSettingsView`. A new setting is a store with
     `init(defaults:isPersistent:)`, a property and `set…` method on the model, and a row.
     `MarkdownSettingsView` (#55) is Settings > Markdown: default flavor, frontmatter display,
+    Render diagrams (M7, `MarkdownSettings.rendersDiagrams`, published to Quick Look),
     built-in preprocessors (one row per `MarkdownSettings.optionalPreprocessors` entry), then
     the custom preprocessor (#57) and processor (#106) sections. `ReadingSettingsView` is
     Settings > Reading: how open documents behave (change highlights). General has no room to
