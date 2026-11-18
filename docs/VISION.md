@@ -863,6 +863,11 @@ editor or a browser.
   code block. An image in a label loads only as the CSP and `LocalImagePolicy` allow, like any
   document image. Headless output, Copy as HTML, and Quick Look keep the `language-mermaid` code
   block: no JavaScript runs outside the viewer.
+  - **Licenses.** mermaid's bundle includes elkjs (EPL-2.0 OR GPL-3.0-or-later; mermaid's ELK
+    layout). Peep takes it under EPL-2.0, which asks an object code distribution to say where the
+    source is: `make vendor-mermaid` writes that note (the upstream tag) into
+    `Vendor/mermaid/NOTICES` for every EPL package, and fails if it can't. Every other bundled
+    package is permissive (MIT, ISC, BSD, Apache-2.0, MPL-2.0 or Apache-2.0, Unlicense).
 - Raw HTML in Markdown is sanitized per a defined policy rather than passed through blindly.
   - **No `--no-sanitize` (#65).** The CLI has no way to turn sanitizing off. Headless output is
     a page meant to be opened in a browser, where page JavaScript isn't disabled as it is in

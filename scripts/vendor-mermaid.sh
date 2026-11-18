@@ -80,7 +80,22 @@ for (const folder of packageFolders(modules)) {
     .map((name) => fs.readFileSync(path.join(folder, name), "utf8").replace(/\r\n?/g, "\n").trim())
     .join("\n\n");
   const license = typeof manifest.license === "string" ? manifest.license : "see below";
-  packages.set(key, { name: manifest.name, version: manifest.version, license, text });
+  // EPL-2.0 (section 3.2) asks object code distributions to say where the source is. Peep
+  // takes such packages under the EPL, so their notice names the exact upstream source.
+  let source = "";
+  if (/\bEPL\b/.test(license)) {
+    const repository = typeof manifest.repository === "string" ? manifest.repository : manifest.repository?.url;
+    if (!repository) {
+      console.error(`error: ${key} is EPL licensed but has no repository for its source notice`);
+      process.exit(1);
+    }
+    // npm strips gitHead from installed manifests; upstream tags each release by version.
+    const url = repository.replace(/^git\+/, "").replace(/\.git$/, "");
+    source =
+      `Peep distributes ${manifest.name} under the Eclipse Public License 2.0. Its source code is ` +
+      `available at ${url}/tree/${manifest.version}.\n\n`;
+  }
+  packages.set(key, { name: manifest.name, version: manifest.version, license, text: source + text });
 }
 
 const sorted = [...packages.values()].sort((a, b) =>
