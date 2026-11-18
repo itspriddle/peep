@@ -105,13 +105,23 @@ lock the build database.
   - `Statistics/`: `WordCount` (the words a reader sees: the transformed body, without
     frontmatter, URLs, image alt, raw HTML, or emoji; ICU word segmentation), computed in the
     pipeline as `RenderedDocument.wordCount`.
-  - `Diagrams/`: `MermaidBlocks` (#117: a code block whose language is `mermaid`, any case;
-    `RenderedDocument.hasMermaidBlocks`, set in the pipeline). The HTML keeps the code block;
-    only the app's viewer draws it.
   - `Changes/`: `SourceChanges` (which lines of a live reload's new text changed: line diff of
     the rendered sources after trimming common lines, blank lines never reported, a middle past
     `lineDiffLimit` reported as one range).
   - `Highlighting/`: highlight.js in JavaScriptCore; `HighlightValidator` re-serializes its output.
+  - `Diagrams/` (M7, `RenderOptions.diagrams`): fenced blocks drawn as static SVG in pure Swift.
+    `DiagramRendering` is the AST pass (run by `HTMLRenderer.drawingDiagrams(in:)` before
+    highlighting and the word count; 1 MB per block, 200k coordinates per document) setting the
+    internal `CodeBlock.diagramSVG`; `HTMLRenderer+Diagrams` writes the `figure.peep-diagram`.
+    `DiagramKind` names the languages (first info-string word, case-insensitive): a new kind is
+    a case plus its `render(_:budget:)` branch. `SVGWriter` is the only markup source (fixed
+    names, escaped text, `SVGNumber`s, `SVGPath`); never write an input string. Maps:
+    `GeoJSON` / `TopoJSON` decode (via `JSONValues`) into `GeoGeometry`, `MapProjection` (Web
+    Mercator, fitted), `MapDiagram` (classed paths; colors in `ThemeBase`).
+    `MarkdownNode.rewritingCodeBlocks` (AST) is the walk both code block passes share.
+    Mermaid (#117) isn't a `DiagramKind`: `MermaidBlocks` only finds blocks (`mermaid`, any
+    case) for `RenderedDocument.hasMermaidBlocks` (false with `diagrams` off); the HTML keeps
+    the code block and only the app's viewer draws it.
   - `AppOpening/`: what the CLI and the app agree on (M5; untrusted on the app's side).
     `AppOpenEvent` builds and reads the Open Documents event and its parameters
     (`AppOpenParameters`: `PepT` theme, `PepW` wait token in `+Wait`, with the
@@ -155,6 +165,7 @@ lock the build database.
     viewer; stores nothing itself), and `GeneralSettingsView`. A new setting is a store with
     `init(defaults:isPersistent:)`, a property and `set…` method on the model, and a row.
     `MarkdownSettingsView` (#55) is Settings > Markdown: default flavor, frontmatter display,
+    Render diagrams (M7, `MarkdownSettings.rendersDiagrams`, published to Quick Look),
     built-in preprocessors (one row per `MarkdownSettings.optionalPreprocessors` entry), then
     the custom preprocessor (#57) and processor (#106) sections. `ReadingSettingsView` is
     Settings > Reading: how open documents behave (change highlights). General has no room to
@@ -295,7 +306,8 @@ lock the build database.
     `+Diagrams.swift` (evaluated once per page, only when `RenderedPage.hasMermaidBlocks`, after
     `load`; redrawn after `updateContent`/`replaceContent` swaps and on theme or appearance
     darkness changes; serialized in `pendingDiagramRender`, which the window awaits for a mermaid
-    page before scrolling; `rendersDiagrams` turns it off).
+    page before scrolling). Render diagrams off makes `hasMermaidBlocks` false
+    (`RenderOptions.diagrams`), and the Settings re-render swaps the code blocks back in.
   - `Scripts/`: bundled JS run only in `AppScripts.world` (but `MermaidDiagrams.js`, in
     `DiagramScripts.world`); pass values as arguments, never splice them into source.
   - `Performance/`: `LaunchTiming`, launch milestones that `scripts/measure-cold-open` reads

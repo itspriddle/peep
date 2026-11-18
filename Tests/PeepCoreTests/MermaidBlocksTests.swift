@@ -46,6 +46,15 @@ struct MermaidBlocksTests {
         }
     }
 
+    @Test("with diagrams off, nothing is drawn")
+    func diagramsOff() {
+        var options = RenderOptions()
+        options.diagrams = false
+        let rendered = render("```mermaid\ngraph TD\n```\n", options: options)
+        #expect(!rendered.hasMermaidBlocks)
+        #expect(rendered.html.contains("<code class=\"language-mermaid\">"))
+    }
+
     @Test("a processor's page reads the body as Peep parses it")
     func processor() {
         let renderer = HTMLRenderer()

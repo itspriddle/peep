@@ -192,24 +192,46 @@ struct DiagramsTests {
         #expect(coordinator.diagrams.renderedDark == false)
     }
 
-    @Test("turning diagrams off shows the code again; on draws them")
+    /// The page Settings > Markdown > Render diagrams off renders (`RenderOptions.diagrams`).
+    func pageWithoutDiagrams(_ source: String) -> RenderedPage {
+        var preferences = MarkdownPreferences.default
+        preferences.rendersDiagrams = false
+        return DocumentContent(source: source, fallbackTitle: "diagrams.md", preferences: preferences).page
+    }
+
+    @Test("turning Render diagrams off shows the code again; on draws them")
     func toggle() async throws {
         try await load(Self.flowchart)
-        coordinator.rendersDiagrams = false
+        // A Settings change re-renders the document and swaps it in place.
+        try await coordinator.replaceContent(with: pageWithoutDiagrams(Self.flowchart), baseURL: nil)
         await coordinator.pendingDiagramRender?.value
         #expect(try await count("figure.peep-diagram") == 0)
         #expect(try await count("pre[data-peep-diagram]") == 0)
         #expect(try await count("pre[data-source-line='5']") == 1)
-        coordinator.rendersDiagrams = true
+        try await coordinator.replaceContent(with: page(Self.flowchart), baseURL: nil)
         await coordinator.pendingDiagramRender?.value
-        #expect(try await count("figure.peep-diagram svg") == 1)
+        #expect(try await count("figure.peep-diagram.peep-diagram-mermaid svg") == 1)
     }
 
     @Test("off from the start, a mermaid page never loads mermaid")
     func offFromStart() async throws {
-        coordinator.rendersDiagrams = false
-        try await coordinator.load(page(Self.flowchart), baseURL: nil)
+        try await coordinator.load(pageWithoutDiagrams(Self.flowchart), baseURL: nil)
         #expect(coordinator.pendingDiagramRender == nil)
         #expect(try await count("pre > code.language-mermaid") == 1)
+        let type = try await evaluate("return typeof globalThis.mermaid;", in: DiagramScripts.world)
+        #expect(type as? String == "undefined")
+    }
+
+    @Test("maps the renderer draws are left alone")
+    func rendererDiagrams() async throws {
+        let map = """
+            ```geojson
+            {"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 0]]]}
+            ```
+            """
+        try await load(Self.flowchart + "\n\n" + map + "\n")
+        #expect(try await count("figure.peep-diagram") == 2)
+        #expect(try await count("figure.peep-diagram-mermaid") == 1)
+        #expect(try await count("figure.peep-diagram-geojson") == 1)
     }
 }

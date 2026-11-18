@@ -4,8 +4,8 @@
 // after the vendored mermaid.min.js, and only in pages that have mermaid blocks. That world has
 // no message handlers and is separate from the app's bridge world ("peep"), so nothing mermaid
 // does can reach the app. Page JavaScript stays disabled; the page cannot see `mermaid` or
-// `peepDiagrams`. Swift calls `peepDiagrams.render(dark)` and `peepDiagrams.clear()` with
-// callAsyncJavaScript and passes values as arguments, never as script source.
+// `peepDiagrams`. Swift calls `peepDiagrams.render(dark)` with callAsyncJavaScript and passes
+// values as arguments, never as script source.
 //
 // A block's source is its code element's `textContent` (a value handed to mermaid, never run).
 // mermaid renders with `securityLevel: "strict"` (labels sanitized with DOMPurify, no click
@@ -23,7 +23,9 @@
   // The pre's source line while its figure holds it.
   const HIDDEN_SOURCE_LINE = "data-peep-diagram-line";
   const FOLDED = "data-peep-folded";
-  const FIGURE_CLASS = "peep-diagram";
+  // The renderer's diagram figure classes (PeepCore `HTMLRenderer+Diagrams`), so ThemeBase's
+  // `.peep-diagram` styles apply.
+  const FIGURE_CLASS = "peep-diagram peep-diagram-mermaid";
   const NOTE_CLASS = "peep-diagram-error";
   const MAXIMUM_NOTE_LENGTH = 200;
 
@@ -189,17 +191,5 @@
     return next;
   }
 
-  // Removes every figure and note and shows the code blocks again.
-  function clear() {
-    generation += 1;
-    for (const code of blocks()) {
-      const pre = code.parentElement;
-      removeFigure(pre);
-      removeNote(pre);
-      pre.removeAttribute(STATE);
-    }
-    return true;
-  }
-
-  globalThis.peepDiagrams = Object.freeze({ render, clear });
+  globalThis.peepDiagrams = Object.freeze({ render });
 })();

@@ -69,17 +69,9 @@ final class WebViewCoordinator: NSObject {
 
     // MARK: Diagrams (#117, `WebViewCoordinator+Diagrams.swift`)
 
-    /// Whether mermaid blocks are drawn as diagrams; when off they stay code blocks. Changing
-    /// it updates the loaded page. (Settings > Markdown's "Render diagrams", #115, sets it.)
-    var rendersDiagrams = true {
-        didSet {
-            if rendersDiagrams != oldValue {
-                rendersDiagramsDidChange()
-            }
-        }
-    }
-    /// The loaded page's diagrams: whether it has mermaid blocks, whether mermaid is in it yet,
-    /// and in which colors they were drawn.
+    /// The loaded page's diagrams: whether it has mermaid blocks to draw
+    /// (`RenderedPage.hasMermaidBlocks`, false when Settings > Markdown > Render diagrams is
+    /// off), whether mermaid is in it yet, and in which colors they were drawn.
     var diagrams = DiagramPageState()
     /// The diagram work last started (load, swap, theme, appearance), if any. Each waits for
     /// the one before it. The window awaits it before scrolling a mermaid page; tests too.

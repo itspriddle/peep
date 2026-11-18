@@ -4,22 +4,23 @@ import WebKit
 
 /// Mermaid diagrams on a loaded page (#117, `DiagramScripts`, `App/Scripts/MermaidDiagrams.js`).
 ///
-/// Lazy: a page without mermaid blocks (`RenderedPage.hasMermaidBlocks`) never gets mermaid,
-/// and nothing here runs for it. For one that has them, after the load mermaid is evaluated
-/// once in the diagrams world, then the blocks are drawn; a live reload or Settings swap reuses
-/// it and draws the new blocks. A theme or appearance change of another darkness draws them
-/// again in mermaid's dark or default colors. Each draw keeps the reading position (a diagram
-/// is rarely as tall as its code). The work runs in the background, one step at a time
+/// Lazy: a page without mermaid blocks to draw (`RenderedPage.hasMermaidBlocks`, which is false
+/// when Settings > Markdown > Render diagrams is off) never gets mermaid, and nothing here runs
+/// for it. For one that has them, after the load mermaid is evaluated once in the diagrams
+/// world, then the blocks are drawn; a live reload or Settings swap reuses it and draws the new
+/// blocks (turning Render diagrams off re-renders the document, so the swap brings the code
+/// blocks back). A theme or appearance change of another darkness draws them again in
+/// mermaid's dark or default colors. Each draw keeps the reading position (a diagram is rarely
+/// as tall as its code). The work runs in the background, one step at a time
 /// (`pendingDiagramRender`); a failure leaves the code blocks, never fails a load.
 extension WebViewCoordinator {
     /// What the loaded page holds. Reset by every full load.
     struct DiagramPageState: Equatable {
-        /// The page has mermaid blocks.
+        /// The page has mermaid blocks to draw.
         var hasMermaidBlocks = false
         /// The `pageGeneration` whose page mermaid was evaluated in, if any.
         var installedGeneration: Int?
-        /// Whether the page's diagrams were last drawn dark; nil when they haven't been drawn
-        /// (or were cleared).
+        /// Whether the page's diagrams were last drawn dark; nil when they haven't been drawn.
         var renderedDark: Bool?
     }
 
@@ -39,48 +40,23 @@ extension WebViewCoordinator {
 
     /// Draws the page's diagrams, after any diagram work already started, unless they are
     /// already drawn in the current colors. Does nothing (and starts no task) for a page without
-    /// mermaid blocks, or with diagrams off.
+    /// mermaid blocks to draw.
     func scheduleDiagramRender() {
-        guard hasLoadedPage, rendersDiagrams, diagrams.hasMermaidBlocks, diagrams.renderedDark != diagramsAreDark
-        else {
+        guard hasLoadedPage, diagrams.hasMermaidBlocks, diagrams.renderedDark != diagramsAreDark else {
             return
         }
-        enqueueDiagramWork { coordinator in
-            try await coordinator.renderDiagrams()
-        }
-    }
-
-    /// The `rendersDiagrams` toggle: on draws the page's diagrams, off removes them and shows
-    /// the code blocks again.
-    func rendersDiagramsDidChange() {
-        if rendersDiagrams {
-            scheduleDiagramRender()
-            return
-        }
-        guard hasLoadedPage, diagrams.installedGeneration == pageGeneration else {
-            return
-        }
-        enqueueDiagramWork { coordinator in
-            try await coordinator.clearDiagrams()
-        }
-    }
-
-    private func enqueueDiagramWork(_ work: @escaping @MainActor (WebViewCoordinator) async throws -> Void) {
         let previous = pendingDiagramRender
         pendingDiagramRender = Task { [weak self] in
             await previous?.value
-            guard let self else {
-                return
-            }
             // A failed draw leaves the code blocks; a newer load or swap starts its own.
-            try? await work(self)
+            try? await self?.renderDiagrams()
         }
     }
 
     /// Evaluates mermaid in the loaded page if it isn't there yet, then draws every block.
     private func renderDiagrams() async throws {
         let dark = diagramsAreDark
-        guard hasLoadedPage, rendersDiagrams, diagrams.hasMermaidBlocks, diagrams.renderedDark != dark else {
+        guard hasLoadedPage, diagrams.hasMermaidBlocks, diagrams.renderedDark != dark else {
             return
         }
         let generation = pageGeneration
@@ -94,20 +70,6 @@ extension WebViewCoordinator {
             "return await peepDiagrams.render(dark);", arguments: ["dark": dark], in: nil,
             contentWorld: DiagramScripts.world)
         if let position, generation == pageGeneration {
-            try await restore(position)
-        }
-    }
-
-    /// Removes the page's diagrams, showing the code blocks again.
-    private func clearDiagrams() async throws {
-        guard hasLoadedPage, diagrams.installedGeneration == pageGeneration else {
-            return
-        }
-        diagrams.renderedDark = nil
-        let position = try? await readingPosition()
-        _ = try await webView.callAsyncJavaScript(
-            "return peepDiagrams.clear();", arguments: [:], in: nil, contentWorld: DiagramScripts.world)
-        if let position {
             try await restore(position)
         }
     }

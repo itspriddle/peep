@@ -12,14 +12,15 @@ extension HTMLRenderer {
     /// 4. Parse the body with the flavor's extensions (`MarkdownParser`).
     /// 5. AST transforms: the flavor's and `options.builtInPreprocessors`, in `MarkdownTransform`
     ///    order.
-    /// 6. HTML: sanitize raw HTML, collect headings and anchors, highlight code, write markup.
-    ///    The word count (`WordCount`) and `hasMermaidBlocks` read the same transformed body.
+    /// 6. HTML: draw diagrams (`DiagramRendering`), sanitize raw HTML, collect headings and
+    ///    anchors, highlight code, write markup. The word count (`WordCount`) reads the same
+    ///    tree, so a block drawn as a diagram has no words; so does `hasMermaidBlocks`.
     public func render(_ markdown: String) -> RenderedDocument {
         let prepared = prepare(markdown)
         let renderer = prepared.renderer(from: self)
         let tree = MarkdownParser(extensions: prepared.options.flavor.extensions)
             .parse(prepared.body, lineOffset: prepared.lineOffset)
-        let document = renderer.transformed(tree, source: markdown)
+        let document = renderer.drawingDiagrams(in: renderer.transformed(tree, source: markdown))
 
         var output = HTMLOutput(capacity: markdown.utf8.count + markdown.utf8.count / 4)
         if let frontmatter = prepared.frontmatter, options.frontmatterDisplay == .table {
@@ -35,7 +36,7 @@ extension HTMLRenderer {
             overrides: prepared.overrides,
             flavor: prepared.options.flavor,
             wordCount: WordCount.count(in: document),
-            hasMermaidBlocks: MermaidBlocks.contains(in: document)
+            hasMermaidBlocks: prepared.options.diagrams && MermaidBlocks.contains(in: document)
         )
     }
 
@@ -59,7 +60,7 @@ extension HTMLRenderer {
     /// Renders an already-parsed tree to an HTML fragment, running `options`' transforms first
     /// (stages 5 and 6 of the pipeline).
     public func html(for node: MarkdownNode) -> String {
-        let node = transformed(node)
+        let node = drawingDiagrams(in: transformed(node))
         var output = HTMLOutput()
         render(node, into: &output)
         return output.string
@@ -72,6 +73,16 @@ extension HTMLRenderer {
     func transformed(_ node: MarkdownNode, source: String? = nil) -> MarkdownNode {
         MarkdownTransform.apply(
             to: node, context: TransformContext(options: options, source: source, wikiLinkResolver: wikiLinkResolver))
+    }
+
+    /// The start of stage 6: `node` with the code blocks `options.diagrams` draws given their
+    /// SVG (`CodeBlock.diagramSVG`), before highlighting and the word count see them.
+    func drawingDiagrams(in node: MarkdownNode) -> MarkdownNode {
+        guard options.diagrams else {
+            return node
+        }
+        var diagrams = DiagramRendering()
+        return diagrams.apply(to: node)
     }
 
     /// The document title: frontmatter `title` first, then the first non-empty `h1`.

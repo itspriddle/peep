@@ -44,7 +44,7 @@ extension HTMLRenderer {
             overrides: prepared.overrides,
             flavor: renderer.options.flavor,
             wordCount: WordCount.count(in: parsed),
-            hasMermaidBlocks: MermaidBlocks.contains(in: parsed)
+            hasMermaidBlocks: renderer.options.diagrams && MermaidBlocks.contains(in: parsed)
         )
     }
 }
