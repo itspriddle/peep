@@ -111,6 +111,33 @@ class Point:
 Plain code block without a language, with a long line that should scroll horizontally rather than wrap on screen.
 ```
 
+## Maps
+
+```geojson
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [[-10, 40], [10, 40], [10, 55], [-10, 55], [-10, 40]],
+          [[-2, 45], [2, 45], [2, 50], [-2, 50], [-2, 45]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {},
+      "geometry": { "type": "LineString", "coordinates": [[-12, 38], [0, 47.5], [12, 57]] }
+    },
+    { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [0, 47.5] } }
+  ]
+}
+```
+
 ## Tables
 
 | Left | Center | Right | Code |
