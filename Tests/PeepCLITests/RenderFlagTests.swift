@@ -47,6 +47,16 @@ struct RenderFlagTests {
         #expect(off.stdout.contains("let x = 1"))
     }
 
+    @Test("geojson and topojson blocks are maps; --no-diagrams leaves them code")
+    func diagrams() async {
+        let source = "```geojson\n{\"type\": \"Point\", \"coordinates\": [12.5, 41.9]}\n```\n"
+        let enabled = await CLIHarness.run(["--fragment"], stdin: source)
+        let off = await CLIHarness.run(["--fragment", "--no-diagrams"], stdin: source)
+        #expect(enabled.stdout.hasPrefix("<figure class=\"peep-diagram peep-diagram-geojson\"><svg"))
+        #expect(!off.stdout.contains("<svg"))
+        #expect(off.stdout.hasPrefix("<pre><code class=\"language-geojson\">"))
+    }
+
     @Test("--no-heading-anchors drops heading ids")
     func headingAnchors() async {
         let enabled = await CLIHarness.run(["--fragment"], stdin: "# Hello\n")
@@ -78,7 +88,7 @@ struct RenderFlagTests {
         "Rendering flags without HTML output are a usage error",
         arguments: [
             ["--source-lines"], ["--wiki-links"], ["--no-wiki-links"], ["--verbose"], ["--frontmatter", "table"],
-            ["--no-highlight"], ["--block-remote-images"], ["--no-heading-anchors"],
+            ["--no-highlight"], ["--no-diagrams"], ["--block-remote-images"], ["--no-heading-anchors"],
         ])
     func needHTMLOutput(flags: [String]) async throws {
         let folder = try TempFolder()

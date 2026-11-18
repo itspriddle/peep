@@ -43,6 +43,14 @@ autolinks, footnotes, emoji shortcodes, and GitHub alerts (`> [!NOTE]`). Setting
 switches the default to strict CommonMark, shows frontmatter as a table, and turns on wiki
 links (`[[Page]]`). Open windows update right away.
 
+## Maps
+
+` ```geojson ` and ` ```topojson ` code blocks are drawn as maps, as on GitHub: the shapes only,
+with no map tiles (Peep loads nothing from the network). The map is a static SVG, so it looks the
+same in a window, in `peep --html`, in Copy as HTML, and in Quick Look. A block that isn't valid
+GeoJSON or TopoJSON, or is too big to draw, stays a code block. Settings > Markdown > Render
+diagrams, or `peep --no-diagrams`, turns maps off.
+
 ## Per-document settings
 
 A document can choose how it is shown with a `peep:` mapping in its YAML frontmatter:
@@ -141,6 +149,7 @@ These flags render HTML instead:
 peep --html README.md > README.html        # a complete page: CSS inline, no external resources
 peep -o README.html README.md              # the same page written to a file
 peep --fragment intro.md usage.md > body.html   # body HTML only, for embedding
+peep --html --no-diagrams map.md > map.html     # geojson and topojson blocks stay code
 ```
 
 - `--html` prints one complete page per run. It is already standalone: styles are inline and a
@@ -167,8 +176,8 @@ peep --fragment intro.md usage.md > body.html   # body HTML only, for embedding
   that don't load are reported on standard error).
 - Rendering flags: `--frontmatter table` shows frontmatter before the body (hidden by default);
   `--wiki-links` / `--no-wiki-links` turn `[[wiki links]]` on or off, beating the document's
-  `peep.wikilinks`; `--source-lines` adds `data-source-line` attributes; `--no-highlight` and
-  `--no-heading-anchors` turn those off; `--block-remote-images` replaces remote images with a
+  `peep.wikilinks`; `--source-lines` adds `data-source-line` attributes; `--no-highlight`,
+  `--no-diagrams` (maps), and `--no-heading-anchors` turn those off; `--block-remote-images` replaces remote images with a
   placeholder (they're kept by default, as on GitHub). Raw HTML is always sanitized; there is no
   flag to turn that off. The CLI ignores the app's Settings: output depends only on the flags
   and the file.
