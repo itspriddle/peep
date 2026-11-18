@@ -1,8 +1,10 @@
 import SwiftUI
 
 /// Settings > Reading: how open documents behave while you read them. "Highlight changes when a
-/// file is saved" reads `SettingsModel` and changes the setting through
-/// `setHighlightsChanges(_:)`; the identifier (`settings-highlight-changes`) is for UI tests.
+/// file is saved" and its supplemental "Scroll to the first change" (disabled while highlights
+/// are off) read `SettingsModel` and change the settings through `setHighlightsChanges(_:)` and
+/// `setScrollsToChanges(_:)`; the identifiers (`settings-highlight-changes`,
+/// `settings-scroll-to-changes`) are for UI tests.
 struct ReadingSettingsView: View {
     let model: SettingsModel
 
@@ -18,6 +20,15 @@ struct ReadingSettingsView: View {
                     "After a document’s file changes, a bar beside each changed block fades out once "
                         + "you’ve seen it. Changes out of view are counted in the status bar; click the count "
                         + "to go to the next one.")
+                Toggle(
+                    "Scroll to the first change",
+                    isOn: binding(\.scrollsToChanges, model.setScrollsToChanges)
+                )
+                .accessibilityIdentifier("settings-scroll-to-changes")
+                .disabled(!model.highlightsChanges)
+                .padding(.leading, 20)
+                note("When no change is in view after a save, scroll to the first one.")
+                    .padding(.leading, 20)
             }
         }
         .formStyle(.columns)

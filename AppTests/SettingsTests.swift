@@ -17,6 +17,7 @@ final class SettingsTests: DocumentWindowTestCase {
         zoomSettings: ZoomSettings? = nil,
         contentWidthSettings: ContentWidthSettings? = nil, markdownSettings: MarkdownSettings? = nil,
         collapsibleSectionsSettings: CollapsibleSectionsSettings? = nil,
+        changeHighlightsSettings: ChangeHighlightsSettings? = nil,
         openThemesFolder: (@MainActor () -> Void)? = nil
     ) -> SettingsModel {
         workspace.setHandler("com.example.other")
@@ -30,6 +31,8 @@ final class SettingsTests: DocumentWindowTestCase {
             contentWidthSettings: contentWidthSettings ?? ContentWidthSettings(defaults: defaults, isPersistent: true),
             collapsibleSectionsSettings: collapsibleSectionsSettings
                 ?? CollapsibleSectionsSettings(defaults: defaults, isPersistent: true),
+            changeHighlightsSettings: changeHighlightsSettings
+                ?? ChangeHighlightsSettings(defaults: defaults, isPersistent: true),
             outlinePreference: OutlinePreference(defaults: defaults, isPersistent: true),
             pinPreference: WindowPinPreference(defaults: defaults, isPersistent: true),
             markdownSettings: markdownSettings ?? MarkdownSettings(defaults: defaults, isPersistent: true),

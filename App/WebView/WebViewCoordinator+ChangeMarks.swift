@@ -38,4 +38,15 @@ extension WebViewCoordinator {
         let result = try await callBridge("return peepChanges.scrollToNext();")
         return (result as? NSNumber)?.boolValue == true
     }
+
+    /// Scrolls to the first change mark in the document, unless one is already on screen,
+    /// unfolding its section. Returns whether it scrolled.
+    @discardableResult
+    func scrollToFirstChange() async throws -> Bool {
+        guard hasLoadedPage else {
+            return false
+        }
+        let result = try await callBridge("return peepChanges.scrollToFirst();")
+        return (result as? NSNumber)?.boolValue == true
+    }
 }

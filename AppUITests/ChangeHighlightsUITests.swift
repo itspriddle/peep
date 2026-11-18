@@ -86,4 +86,43 @@ final class ChangeHighlightsUITests: XCTestCase {
             .write(to: file)
         XCTAssertTrue(item.waitForExistence(timeout: PeepUITestApp.defaultTimeout), "the changes item")
     }
+
+    func testScrollsToChangeOnSave() throws {
+        let file = try copyFixture()
+        let peep = PeepUITestApp.launch(
+            opening: file,
+            arguments: ["-PeepUITestChangeHighlights", "YES", "-PeepUITestScrollToChanges", "YES"])
+        self.peep = peep
+        let window = peep.waitForWindow(titled: "Live Reload Fixture")
+        peep.waitForRenderedText("Paragraph 1.", in: window)
+
+        let source = try String(contentsOf: file, encoding: .utf8)
+        try Data(source.replacingOccurrences(of: "Paragraph 140.", with: "Paragraph 140, edited.").utf8)
+            .write(to: file)
+        peep.waitForRenderedText("Paragraph 140, edited.", in: window)
+        let edited = peep.renderedText("Paragraph 140, edited.", in: window)
+        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: edited)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [hittable], timeout: PeepUITestApp.defaultTimeout), .completed,
+            "the window scrolled to the change without a click")
+    }
+
+    func testScrollToggleFollowsHighlights() throws {
+        let file = try copyFixture()
+        let peep = PeepUITestApp.launch(opening: file)
+        self.peep = peep
+        _ = peep.waitForWindow(titled: "Live Reload Fixture")
+
+        let settings = peep.openSettings()
+        peep.showSettingsPane("Reading")
+        let highlight = settings.checkBoxes["settings-highlight-changes"]
+        let scroll = settings.checkBoxes["settings-scroll-to-changes"]
+        XCTAssertTrue(scroll.waitForExistence(timeout: PeepUITestApp.defaultTimeout))
+        XCTAssertFalse(scroll.isEnabled, "disabled while highlights are off")
+        highlight.click()
+        let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: scroll)
+        XCTAssertEqual(XCTWaiter().wait(for: [enabled], timeout: PeepUITestApp.defaultTimeout), .completed)
+        scroll.click()
+        XCTAssertEqual(scroll.value as? Int, 1)
+    }
 }

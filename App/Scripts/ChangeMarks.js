@@ -1,7 +1,8 @@
 // Peep change marks: after a live reload, a bar in the left margin beside each changed block
-// (and a short rule where text was deleted), while Settings > General's "Highlight changes when
+// (and a short rule where text was deleted), while Settings > Reading's "Highlight changes when
 // a file is saved" is on. A mark fades out once it has been on screen for a few seconds; marks
-// out of view are counted for the status bar.
+// out of view are counted for the status bar. With "Scroll to the first change" on, Swift then
+// calls `peepChanges.scrollToFirst` (which stays put when a mark is already on screen).
 //
 // Runs only in the app's isolated content world ("peep", see AppScripts.swift); page JavaScript
 // is disabled. Swift calls `peepChanges.mark` with the changed lines (`SourceChanges`) as
@@ -340,11 +341,35 @@
     if (target === undefined) {
       return false;
     }
-    sections()?.reveal(target.entry.element);
-    const rect = target.entry.element.getBoundingClientRect();
+    scrollToEntry(target.entry);
+    return true;
+  }
+
+  // Scrolls the first mark in the document into view, as `scrollToNext` does, unless a mark is
+  // already on screen (the reader sees a change). Returns whether it scrolled.
+  function scrollToFirst() {
+    const withSpans = marks
+      .map((entry) => ({ entry, span: viewportSpan(entry) }))
+      .filter((item) => item.span !== null);
+    const onScreen = withSpans.some(
+      (item) =>
+        !isHidden(item.entry.element) && item.span.bottom > 0 && item.span.top < window.innerHeight,
+    );
+    if (onScreen || withSpans.length === 0) {
+      return false;
+    }
+    // Deletion marks are appended after changed blocks, so order by position, not by `marks`.
+    const first = withSpans.reduce((best, item) => (item.span.top < best.span.top ? item : best));
+    scrollToEntry(first.entry);
+    return true;
+  }
+
+  // Unfolds `entry`'s section and puts its block a third of the way down the viewport.
+  function scrollToEntry(entry) {
+    sections()?.reveal(entry.element);
+    const rect = entry.element.getBoundingClientRect();
     window.scrollTo(0, Math.max(0, rect.top + window.scrollY - window.innerHeight / 3));
     layout();
-    return true;
   }
 
   window.addEventListener(
@@ -361,5 +386,5 @@
     { passive: true },
   );
 
-  globalThis.peepChanges = Object.freeze({ mark, clear, scrollToNext });
+  globalThis.peepChanges = Object.freeze({ mark, clear, scrollToNext, scrollToFirst });
 })();

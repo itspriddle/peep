@@ -2,10 +2,12 @@ import AppKit
 import PeepCore
 import WebKit
 
-/// Change highlights: while Settings > General's "Highlight changes when a file is saved" is on
+/// Change highlights: while Settings > Reading's "Highlight changes when a file is saved" is on
 /// (`ChangeHighlightsSettings`, every window), each live reload marks the blocks it changed
 /// (`MarkdownDocument.contentChanges`, `App/Scripts/ChangeMarks.js`). Marks fade once seen; the
 /// status bar counts those out of view (`ChangesItem`), and clicking it scrolls to the next.
+/// "Scroll to the first change" (`ChangeHighlightsSettings.scrollsToChanges`) scrolls there
+/// after the reload instead, when no change is in view.
 /// Any other content change (a Settings re-render, opting in to remote images) clears them.
 extension DocumentWindowController {
     /// Listens for the page's off-screen counts and follows the setting. Called once from `init`.
@@ -30,7 +32,9 @@ extension DocumentWindowController {
     }
 
     /// Marks `changes` (the document's `contentChanges` when the page was shown) in the page,
-    /// replacing earlier marks. Called after every load or swap while the setting is on.
+    /// replacing earlier marks, then, with "Scroll to the first change" on, scrolls to the first
+    /// one when none is in view. Called after every load or swap while the setting is on (after
+    /// the reading position is restored, so the scroll wins).
     func showChanges(_ changes: SourceChanges?) async {
         guard changeHighlightsSettings.isEnabled else {
             return
@@ -38,6 +42,9 @@ extension DocumentWindowController {
         // The page reports new counts as it places the marks.
         statusBar.offScreenChanges = nil
         try? await coordinator.markChanges(changes)
+        if let changes, !changes.isEmpty, changeHighlightsSettings.scrollsOnChange {
+            try? await coordinator.scrollToFirstChange()
+        }
     }
 
     /// A count report from `ChangeMarks.js`.
