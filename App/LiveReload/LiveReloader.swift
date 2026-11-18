@@ -1,4 +1,5 @@
 import Foundation
+import PeepCore
 
 /// Keeps a `MarkdownDocument` in step with its file: a `FileWatcher` reports changes, the file
 /// is read and rendered off the main actor, and the newest result replaces the document's
@@ -111,14 +112,23 @@ final class LiveReloader {
         cancelReload()
         let generation = generation
         let currentSource = force ? nil : document.content?.source
+        // Only a page with source lines can be marked: not a custom processor's (#106).
+        let previousRenderedSource =
+            document.changeHighlightsSettings.isEnabled && document.content?.processedHTML == nil
+            ? document.content?.renderedSource : nil
         let preferences = document.renderPreferences
         pendingReloadInput = (preferences, force)
         document.updateRenderActivity()
         reloadTask = Task { [weak self] in
             let result: Result<DocumentContent?, any Error>
+            var changes: SourceChanges?
             do {
-                result = .success(
-                    try await Self.render(contentsOf: url, unlessSourceIs: currentSource, preferences: preferences))
+                let content = try await Self.render(
+                    contentsOf: url, unlessSourceIs: currentSource, preferences: preferences)
+                if let previousRenderedSource, let content, content.processedHTML == nil {
+                    changes = await Self.changes(from: previousRenderedSource, to: content.renderedSource)
+                }
+                result = .success(content)
             } catch is CancellationError {
                 return
             } catch {
@@ -131,13 +141,20 @@ final class LiveReloader {
             document.updateRenderActivity()
             switch result {
             case .success(let content?):
-                document.setContent(content)
+                document.setContent(content, changes: changes)
             case .success(nil):
                 document.fileStatus = .current
             case .failure(let error):
                 document.fileStatus = .unreadable(reason: error.localizedDescription)
             }
         }
+    }
+
+    /// What changed from `old` to `new` (rendered sources), worked out off the main actor.
+    nonisolated static func changes(from old: String, to new: String) async -> SourceChanges {
+        await Task.detached(priority: .userInitiated) {
+            SourceChanges.between(old: old, new: new)
+        }.value
     }
 
     /// Reads and renders `url` with `preferences` (Settings > Markdown, #55, and the custom

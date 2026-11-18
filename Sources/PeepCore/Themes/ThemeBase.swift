@@ -14,6 +14,8 @@
 /// - the blocked remote-image placeholder's visibility (#20) (its look is a default);
 /// - folded collapsible sections (`[data-peep-folded]`, the app's `CollapsibleSections.js`)
 ///   staying hidden (the chevron's look is a default);
+/// - change marks (`[data-peep-changes]`, the app's `ChangeMarks.js`) staying out of the way:
+///   positioned over the page, never hit, never printed (their color and fade are defaults);
 
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
 /// - structural print rules (#26, #38): light color scheme, no page background, full width,
@@ -68,6 +70,21 @@ public enum ThemeBase {
         [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6):is(:hover, :focus-visible)::after {
           opacity: 0.6;
         }
+        /* Change marks (the app's ChangeMarks.js, while Settings turns them on): a bar beside each
+           block a live reload changed and a short rule where text was deleted, in their own layer
+           outside the article. They fade once seen. Never set by documents (the sanitizer drops
+           `data-` attributes), never printed. */
+        [data-peep-changes] {
+          position: absolute !important; top: 0 !important; left: 0 !important; width: 0 !important;
+          height: 0 !important; overflow: visible !important; pointer-events: none !important;
+        }
+        [data-peep-change] {
+          position: absolute !important; pointer-events: none !important; width: 3px; border-radius: 1.5px;
+          background: #0969da; background: -apple-system-control-accent; transition: opacity 800ms ease-out;
+        }
+        [data-peep-change="before"], [data-peep-change="after"] { width: 12px; height: 2px; margin-left: -9px; }
+        [data-peep-change][data-peep-fading] { opacity: 0; }
+        @media (prefers-reduced-motion: reduce) { [data-peep-change] { transition: none; } }
         /* Find in page (the app's find bar): every match, and the current one. Never printed. */
         ::highlight(peep-find) { background-color: rgb(255 214 0 / 0.4) !important; }
         ::highlight(peep-find-current) { background-color: #ff9632 !important; color: #1f2328 !important; }
@@ -84,6 +101,7 @@ public enum ThemeBase {
           ::highlight(peep-find), ::highlight(peep-find-current) {
             background-color: transparent !important; color: inherit !important;
           }
+          [data-peep-changes] { display: none !important; }
           :root { color-scheme: light !important; }
           :root, body { print-color-adjust: economy !important; }
           p { orphans: 3; widows: 3; }

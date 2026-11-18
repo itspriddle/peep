@@ -16,6 +16,7 @@ import PeepCore
 /// | Content width | `ContentWidthSettings.defaultWidth` | new windows (#47) |
 /// | Custom content width | `ContentWidthSettings.isCustomWidthEnabled`, `customWidthPoints` | every window, live |
 /// | Collapsible sections | `CollapsibleSectionsSettings.isEnabled` | every window, live |
+/// | Highlight changes on save | `ChangeHighlightsSettings.isEnabled` | every window, next reload |
 /// | Default Markdown viewer | `DefaultViewer` (Launch Services) | system-wide |
 /// | Default flavor | `MarkdownSettings.defaultFlavorID` | every document, live (#55) |
 /// | Frontmatter display | `MarkdownSettings.frontmatterDisplay` | every document, live (#55) |
@@ -42,6 +43,7 @@ final class SettingsModel: NSObject {
     @ObservationIgnored let zoomSettings: ZoomSettings
     @ObservationIgnored let contentWidthSettings: ContentWidthSettings
     @ObservationIgnored let collapsibleSectionsSettings: CollapsibleSectionsSettings
+    @ObservationIgnored let changeHighlightsSettings: ChangeHighlightsSettings
     @ObservationIgnored let outlinePreference: OutlinePreference
     @ObservationIgnored let pinPreference: WindowPinPreference
     @ObservationIgnored let markdownSettings: MarkdownSettings
@@ -77,6 +79,8 @@ final class SettingsModel: NSObject {
     private(set) var customWidthPoints = CustomContentWidth.defaultPoints
     /// Whether clicking a heading collapses its section, in every window.
     private(set) var collapsesSections = false
+    /// Whether a live reload marks what changed, in every window.
+    private(set) var highlightsChanges = false
     private(set) var showsOutlineInNewWindows = false
     private(set) var pinsNewWindows = false
     private(set) var isDefaultViewer = false
@@ -102,6 +106,7 @@ final class SettingsModel: NSObject {
         zoomSettings: ZoomSettings = .shared,
         contentWidthSettings: ContentWidthSettings = .shared,
         collapsibleSectionsSettings: CollapsibleSectionsSettings = .shared,
+        changeHighlightsSettings: ChangeHighlightsSettings = .shared,
         outlinePreference: OutlinePreference = OutlinePreference(),
         pinPreference: WindowPinPreference = WindowPinPreference(),
         markdownSettings: MarkdownSettings = .shared,
@@ -118,6 +123,7 @@ final class SettingsModel: NSObject {
         self.zoomSettings = zoomSettings
         self.contentWidthSettings = contentWidthSettings
         self.collapsibleSectionsSettings = collapsibleSectionsSettings
+        self.changeHighlightsSettings = changeHighlightsSettings
         self.outlinePreference = outlinePreference
         self.pinPreference = pinPreference
         self.markdownSettings = markdownSettings
@@ -142,6 +148,9 @@ final class SettingsModel: NSObject {
             self, selector: refreshSelector, name: CollapsibleSectionsSettings.didChangeNotification,
             object: collapsibleSectionsSettings)
         center.addObserver(
+            self, selector: refreshSelector, name: ChangeHighlightsSettings.didChangeNotification,
+            object: changeHighlightsSettings)
+        center.addObserver(
             self, selector: refreshSelector, name: MarkdownSettings.didChangeNotification, object: markdownSettings)
     }
 
@@ -164,6 +173,7 @@ final class SettingsModel: NSObject {
         isCustomWidthEnabled = contentWidthSettings.isCustomWidthEnabled
         customWidthPoints = contentWidthSettings.customWidthPoints
         collapsesSections = collapsibleSectionsSettings.isEnabled
+        highlightsChanges = changeHighlightsSettings.isEnabled
         showsOutlineInNewWindows = outlinePreference.showsOutlineInNewWindows
         pinsNewWindows = pinPreference.pinsNewWindows
         isDefaultViewer = defaultViewerOffer.viewer.isDefault
@@ -248,6 +258,12 @@ final class SettingsModel: NSObject {
     /// Clicking a heading collapses its section (or stops), in every window, live.
     func setCollapsesSections(_ collapses: Bool) {
         collapsibleSectionsSettings.isEnabled = collapses
+        refresh()
+    }
+
+    /// Live reloads mark what changed (or stop), in every window; off clears open windows' marks.
+    func setHighlightsChanges(_ highlights: Bool) {
+        changeHighlightsSettings.isEnabled = highlights
         refresh()
     }
 

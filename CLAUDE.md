@@ -104,6 +104,9 @@ lock the build database.
   - `Statistics/`: `WordCount` (the words a reader sees: the transformed body, without
     frontmatter, URLs, image alt, raw HTML, or emoji; ICU word segmentation), computed in the
     pipeline as `RenderedDocument.wordCount`.
+  - `Changes/`: `SourceChanges` (which lines of a live reload's new text changed: line diff of
+    the rendered sources after trimming common lines, blank lines never reported, a middle past
+    `lineDiffLimit` reported as one range).
   - `Highlighting/`: highlight.js in JavaScriptCore; `HighlightValidator` re-serializes its output.
   - `AppOpening/`: what the CLI and the app agree on (M5; untrusted on the app's side).
     `AppOpenEvent` builds and reads the Open Documents event and its parameters
@@ -192,6 +195,17 @@ lock the build database.
     folded blocks), via `WebViewCoordinator+Sections` and
     `DocumentWindowController+CollapsibleSections.swift`; View > Collapse/Expand All Sections is
     `SectionsMenu`. The `data-peep-folded` rule is in `ThemeBase`.
+  - `ChangeHighlights/`: `ChangeHighlightsSettings` (Settings > General's "Highlight changes
+    when a file is saved", off by default; `-PeepUITestChangeHighlights YES` under UI tests).
+    While it is on, `LiveReloader` diffs the old and new `renderedSource` off the main actor
+    (not for a custom processor's page, which has no source lines) and passes
+    `MarkdownDocument.setContent(_:changes:)` a `SourceChanges` (`contentChanges`; any other
+    `setContent` clears it). The window marks it after each load or swap
+    (`DocumentWindowController+ChangeHighlights.swift`, `WebViewCoordinator+ChangeMarks`); the
+    page side is `App/Scripts/ChangeMarks.js` (`peepChanges`: bars in their own layer outside
+    the article, fading once seen, off-screen counts posted to the `changeMarks` handler). The
+    status bar's `ChangesItem` shows those counts and scrolls to the next change. The
+    `data-peep-change` rules are in `ThemeBase`.
   - `Updates/` (#81): Sparkle 2 (app target only). `SoftwareUpdating` (what the menu and
     Settings use; fakes in tests), `SparkleUpdater` (`SPUStandardUpdaterController`, started from
     `AppDelegate.applicationDidFinishLaunching`; channels), `InactiveUpdater` (in memory, never
@@ -233,9 +247,9 @@ lock the build database.
     (default visibility). The window fills it after the first page paints (#58), then on each
     display.
   - `StatusBar/`: the strip along the bottom of the window (`DocumentView`'s bottom inset):
-    `StatusBar` (the items, leading; first `WordCountItem`, from `RenderedPage.wordCount`; then
-    `PinToggleItem` and `OutlineToggleItem`, trailing, which replaced the toolbar: windows have
-    none), `StatusBarModel` (the window's visibility, and the outline's and pin for the toggles), and
+    `StatusBar` (the items, leading; first `WordCountItem`, from `RenderedPage.wordCount`, then
+    `ChangesItem` while change marks are out of view; then `PinToggleItem` and
+    `OutlineToggleItem`, trailing, which replaced the toolbar: windows have none), `StatusBarModel` (the window's visibility, and the outline's and pin for the toggles), and
     `StatusBarPreference` (default visibility, shown). View > Show/Hide Status Bar (⌘/) is
     `DocumentWindowController+StatusBar.swift`; a new item is a view in `StatusBar`.
   - `WindowPin/`: `WindowPinPreference` (Settings > General's "Keep new windows on top"; the
