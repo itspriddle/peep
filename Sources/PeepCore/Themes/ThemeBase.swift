@@ -17,6 +17,7 @@
 /// - change marks (`[data-peep-changes]`, the app's `ChangeMarks.js`) staying out of the way:
 ///   positioned over the page, never hit, never printed (their color and fade are defaults);
 
+/// - diagrams' look (`.peep-diagram`, the map classes; M7) is a default;
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
 /// - structural print rules (#26, #38): light color scheme, no page background, full width,
 ///   nothing clipped, no anchor icons, sensible page breaks. External link targets written out
@@ -51,6 +52,23 @@ public enum ThemeBase {
         .markdown-alert > :last-child { margin-bottom: 0; }
         .markdown-alert-title { display: flex; align-items: center; font-weight: 600; line-height: 1.25; }
         .markdown-alert-title svg { flex: none; margin-right: 0.5em; fill: currentColor; }
+        /* Diagrams (M7): maps the renderer draws (`MapDiagram`, a `figure.peep-diagram` around an
+           inline SVG). Paths have classes, never colors: they take the text color, so every theme
+           works light, dark, and print. Themes may restyle all of it. */
+        .peep-diagram { margin: 0 0 16px; padding: 0; }
+        .peep-diagram > svg {
+          display: block; box-sizing: border-box; width: 100%; height: auto;
+          border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 6px;
+        }
+        .peep-map-area {
+          fill: currentColor; fill-opacity: 0.15; stroke: currentColor; stroke-width: 1.5;
+          stroke-linejoin: round; vector-effect: non-scaling-stroke;
+        }
+        .peep-map-line {
+          fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+          vector-effect: non-scaling-stroke;
+        }
+        .peep-map-point { fill: currentColor; fill-opacity: 0.8; stroke: none; }
         /* Wiki links (#53) to a missing page have no href, so themes style them as plain text
            (`a:not([href])`); a dashed underline keeps them distinguishable. */
         .wikilink-missing { border-bottom: 1px dashed; cursor: default; }
@@ -120,7 +138,7 @@ public enum ThemeBase {
           tr, img, .remote-image { break-inside: avoid !important; }
           img { max-width: 100% !important; }
           h1, h2, h3, h4, h5, h6 { break-after: avoid !important; }
-          .markdown-alert { break-inside: avoid; }
+          .markdown-alert, .peep-diagram { break-inside: avoid; }
           .markdown-alert-title { break-after: avoid; }
         }
         /* GitHub's theme-specific images (`ColorModeImage`), and their remote-image placeholders:

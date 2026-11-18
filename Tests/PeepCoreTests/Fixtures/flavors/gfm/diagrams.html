@@ -1,0 +1,14 @@
+<h1 id="diagrams"><a class="anchor" aria-hidden="true" href="#diagrams"></a>Diagrams</h1>
+<p>A GeoJSON feature collection: a polygon with a hole, a line, and a point.</p>
+<figure class="peep-diagram peep-diagram-geojson"><svg class="peep-map" viewBox="0 0 800 400" role="img" aria-label="GeoJSON map"><path class="peep-map-area" fill-rule="evenodd" d="M271.2 350.9L528.8 350.9L528.8 62.1L271.2 62.1L271.2 350.9ZM374.2 263.4L425.8 263.4L425.8 168L374.2 168L374.2 263.4Z"/><path class="peep-map-line" d="M245.4 384L400 216.9L554.6 16"/><path class="peep-map-point" d="M395 216.9a5 5 0 1 0 10 0a5 5 0 1 0 -10 0Z"/></svg><figcaption class="sr-only">GeoJSON map</figcaption></figure>
+<p>A TopoJSON topology (the specification's example):</p>
+<figure class="peep-diagram peep-diagram-topojson"><svg class="peep-map" viewBox="0 0 800 400" role="img" aria-label="TopoJSON map"><path class="peep-map-area" fill-rule="evenodd" d="M16 276.8L169.6 276.8L169.6 123.2L16 123.2L16 276.8Z"/><path class="peep-map-line" d="M323.2 276.8L476.8 123.2L630.4 276.8L784 123.2"/><path class="peep-map-point" d="M318.2 200a5 5 0 1 0 10 0a5 5 0 1 0 -10 0Z"/></svg><figcaption class="sr-only">TopoJSON map</figcaption></figure>
+<p>Not valid GeoJSON, so it stays code:</p>
+<pre><code class="language-geojson">{ &quot;type&quot;: &quot;Point&quot;, &quot;coordinates&quot;: [1] }
+</code></pre>
+<p>In a list:</p>
+<ul>
+<li>
+<figure class="peep-diagram peep-diagram-geojson"><svg class="peep-map" viewBox="0 0 800 400" role="img" aria-label="GeoJSON map"><path class="peep-map-point" d="M11 129.1a5 5 0 1 0 10 0a5 5 0 1 0 -10 0ZM151.8 364.1a5 5 0 1 0 10 0a5 5 0 1 0 -10 0ZM779 35.9a5 5 0 1 0 10 0a5 5 0 1 0 -10 0Z"/></svg><figcaption class="sr-only">GeoJSON map</figcaption></figure>
+</li>
+</ul>

@@ -1,7 +1,7 @@
 extension MarkdownNode {
     /// `self` with each code block replaced by what `rewrite` returns for it (`nil` keeps the
-    /// block as is), for the render-time code block passes (`CodeHighlighting`).
-    /// Walks block containers only (code blocks never appear inside
+    /// block as is), for the render-time code block passes (`DiagramRendering`,
+    /// `CodeHighlighting`). Walks block containers only (code blocks never appear inside
     /// inlines), in document order, with an explicit stack so deep trees can't overflow it, and
     /// rebuilds only the containers that changed.
     func rewritingCodeBlocks(_ rewrite: (CodeBlock) -> CodeBlock?) -> MarkdownNode {

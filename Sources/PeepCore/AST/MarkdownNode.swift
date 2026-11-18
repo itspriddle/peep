@@ -150,6 +150,10 @@ public struct CodeBlock: Sendable, Equatable {
     /// (`CodeHighlighting`) and written verbatim by `HTMLRenderer`. Internal, so only output that
     /// passed `HighlightValidator` can get here.
     var highlightedHTML: String?
+    /// The block drawn as a diagram (an `<svg>` element), set by the render-time diagram pass
+    /// (`DiagramRendering`) and written verbatim by `HTMLRenderer` in place of the code.
+    /// Internal, so only `SVGWriter` output can get here.
+    var diagramSVG: String?
 
     public init(info: String = "", literal: String, isFenced: Bool) {
         self.info = info

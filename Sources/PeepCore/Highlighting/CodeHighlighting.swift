@@ -41,9 +41,11 @@ struct CodeHighlighting {
     }
 
     /// Returns `root` with `CodeBlock.highlightedHTML` set on every block that highlights.
+    /// Blocks drawn as diagrams (`CodeBlock.diagramSVG`, `DiagramRendering`, which runs first)
+    /// are left alone and cost nothing.
     mutating func apply(to root: MarkdownNode) -> MarkdownNode {
         root.rewritingCodeBlocks { block in
-            guard let html = highlight(block) else {
+            guard block.diagramSVG == nil, let html = highlight(block) else {
                 return nil
             }
             var block = block

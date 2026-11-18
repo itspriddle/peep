@@ -29,6 +29,7 @@ public struct HTMLRenderer: MarkdownRenderer {
     /// Renders `root` and returns its headings in document order and the remote images
     /// replaced with placeholders (`RenderedDocument.blockedRemoteImages`).
     ///
+    /// Diagrams are drawn before this (`drawingDiagrams(in:)`), so highlighting skips them.
     /// Headings are collected after sanitizing, so text the sanitizer drops doesn't count and
     /// raw HTML `<h1>`–`<h6>` can be included (`HeadingCollection`). With
     /// `options.headingAnchors` on, their slugs become heading ids.
@@ -263,6 +264,10 @@ extension HTMLRenderer {
     private func renderLeaf(_ node: MarkdownNode, into output: inout HTMLOutput) {
         switch node.kind {
         case .codeBlock(let block):
+            if let svg = block.diagramSVG, let kind = DiagramKind(language: block.language) {
+                renderDiagram(svg, kind: kind, node, into: &output)
+                return
+            }
             openBlock("pre", node, into: &output)
             if let language = block.language {
                 output.raw("<code class=\"language-")
