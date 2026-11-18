@@ -51,12 +51,13 @@ public enum QuickLookPreview {
         return try handle.read(upToCount: maximumBytes + 1) ?? Data()
     }
 
-    /// The render options for `configuration`: its flavor, frontmatter display, and built-in
-    /// preprocessors, then the fixed safety settings.
+    /// The render options for `configuration`: its flavor, frontmatter display, built-in
+    /// preprocessors, and diagrams (static SVG, no script), then the fixed safety settings.
     public static func renderOptions(for configuration: QuickLookConfiguration) -> RenderOptions {
         var options = RenderOptions(flavor: configuration.flavor)
         options.frontmatterDisplay = configuration.frontmatter
         options.builtInPreprocessors = configuration.preprocessors
+        options.diagrams = configuration.rendersDiagrams
         options.remoteImages = .blockAll
         options.linkRoot = nil
         options.sanitize = true

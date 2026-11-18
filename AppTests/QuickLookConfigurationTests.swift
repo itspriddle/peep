@@ -73,6 +73,9 @@ final class QuickLookConfigurationTests {
         #expect(published().flavor == .commonmark)
         #expect(published().frontmatter == .table)
         #expect(published().preprocessors == [.wikiLinks])
+        #expect(published().rendersDiagrams)
+        markdown.rendersDiagrams = false
+        #expect(!published().rendersDiagrams)
     }
 
     @Test("a custom Quick Look theme is published with its file's text, and reloads with it")
