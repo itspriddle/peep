@@ -13,6 +13,7 @@ struct DocumentView: View {
     let loadRemoteImages: () -> Void
     let toggleOutline: () -> Void
     let togglePinned: () -> Void
+    let scrollToNextChange: () -> Void
 
     var body: some View {
         MarkdownWebView(coordinator: coordinator)
@@ -45,7 +46,7 @@ struct DocumentView: View {
                 if statusBar.isVisible {
                     StatusBar(
                         document: document, model: statusBar, chrome: chrome, toggleOutline: toggleOutline,
-                        togglePinned: togglePinned)
+                        togglePinned: togglePinned, scrollToNextChange: scrollToNextChange)
                 }
             }
     }

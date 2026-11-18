@@ -74,6 +74,10 @@ final class DocumentWindowController: NSWindowController {
     /// (`DocumentWindowController+CollapsibleSections.swift`).
     let collapsibleSectionsSettings: CollapsibleSectionsSettings
 
+    /// Whether live reloads mark what changed, in every window
+    /// (`DocumentWindowController+ChangeHighlights.swift`).
+    let changeHighlightsSettings: ChangeHighlightsSettings
+
     // MARK: Theme (#34, `DocumentWindowController+Theme.swift`)
 
     /// The registry and default theme this window follows.
@@ -101,6 +105,7 @@ final class DocumentWindowController: NSWindowController {
         zoomSettings: ZoomSettings = .shared,
         contentWidthSettings: ContentWidthSettings = .shared,
         collapsibleSectionsSettings: CollapsibleSectionsSettings = .shared,
+        changeHighlightsSettings: ChangeHighlightsSettings = .shared,
         themeSettings: ThemeSettings = .shared,
         renderProgress: RenderProgress = RenderProgress()
     ) {
@@ -112,6 +117,7 @@ final class DocumentWindowController: NSWindowController {
         self.zoomSettings = zoomSettings
         self.contentWidthSettings = contentWidthSettings
         self.collapsibleSectionsSettings = collapsibleSectionsSettings
+        self.changeHighlightsSettings = changeHighlightsSettings
         self.themeSettings = themeSettings
         newWindowThemeID = themeSettings.defaultThemeIDForNewWindows
         zoomLevel = zoomSettings.defaultLevel
@@ -135,6 +141,7 @@ final class DocumentWindowController: NSWindowController {
         installZoom()
         installContentWidth()
         installCollapsibleSections()
+        installChangeHighlights()
         installTheme()
         installPin()
     }
@@ -159,7 +166,8 @@ final class DocumentWindowController: NSWindowController {
                     renderProgress: renderProgress, statusBar: statusBar, chrome: chrome,
                     loadRemoteImages: { [weak self] in self?.loadRemoteImages(nil) },
                     toggleOutline: { [weak self] in self?.toggleOutline(nil) },
-                    togglePinned: { [weak self] in self?.togglePinned(nil) }))
+                    togglePinned: { [weak self] in self?.togglePinned(nil) },
+                    scrollToNextChange: { [weak self] in self?.scrollToNextChange(nil) }))
             // SwiftUI sets the minimum size; the window (and later restoration) owns the size.
             hostingController.sizingOptions = [.minSize]
             hostingController.view.frame.size = window?.contentLayoutRect.size ?? .zero
@@ -214,6 +222,7 @@ final class DocumentWindowController: NSWindowController {
         // served only from its allowed root (`LocalResourceSchemeHandler`). A moved file gets a
         // new base URL (and root), so the page is loaded again rather than swapped in place.
         let baseURL = coordinator.documentURL(forFileAt: markdownDocument.fileURL)
+        let changes = markdownDocument.contentChanges
         let previous = displayTask
         previous?.cancel()
         displayTask = Task { [coordinator, weak self] in
@@ -230,6 +239,7 @@ final class DocumentWindowController: NSWindowController {
                 }
                 await scrollToPendingFragment()
                 await scrollToPendingSourceLine()
+                await showChanges(changes)
                 await updateOutlinePosition()
                 await refreshFind()
                 if isFirstPage {

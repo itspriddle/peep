@@ -60,7 +60,8 @@ class DocumentWindowTestCase {
     func open(
         _ source: String = source, name: String = "notes.md", zoomSettings: ZoomSettings? = nil,
         contentWidthSettings: ContentWidthSettings? = nil,
-        collapsibleSectionsSettings: CollapsibleSectionsSettings? = nil, themeSettings: ThemeSettings? = nil,
+        collapsibleSectionsSettings: CollapsibleSectionsSettings? = nil,
+        changeHighlightsSettings: ChangeHighlightsSettings? = nil, themeSettings: ThemeSettings? = nil,
         markdownSettings: MarkdownSettings? = nil, customPreprocessorSettings: CustomProgramSettings? = nil,
         customProcessorSettings: CustomProgramSettings? = nil,
         statusBarPreference: StatusBarPreference? = nil, pinPreference: WindowPinPreference? = nil,
@@ -78,6 +79,9 @@ class DocumentWindowTestCase {
         if let customProcessorSettings {
             document.customProcessorSettings = customProcessorSettings
         }
+        let changeHighlightsSettings =
+            changeHighlightsSettings ?? ChangeHighlightsSettings(defaults: defaults, isPersistent: true)
+        document.changeHighlightsSettings = changeHighlightsSettings
         let controller = DocumentWindowController(
             statusBarPreference: statusBarPreference ?? StatusBarPreference(defaults: defaults, isPersistent: true),
             pinPreference: pinPreference ?? WindowPinPreference(defaults: defaults, isPersistent: true),
@@ -85,6 +89,7 @@ class DocumentWindowTestCase {
             contentWidthSettings: contentWidthSettings ?? ContentWidthSettings(defaults: defaults, isPersistent: true),
             collapsibleSectionsSettings: collapsibleSectionsSettings
                 ?? CollapsibleSectionsSettings(defaults: defaults, isPersistent: true),
+            changeHighlightsSettings: changeHighlightsSettings,
             themeSettings: themeSettings ?? self.themeSettings())
         if let appearance {
             controller.window?.appearance = NSAppearance(named: appearance)

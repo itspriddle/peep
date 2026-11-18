@@ -31,6 +31,8 @@ import Foundation
 ///   hidden), so tests never touch `/usr/local/bin` or `~/.local/bin`.
 /// - `-PeepUITestCollapsibleSections YES`: start with collapsible sections on
 ///   (`CollapsibleSectionsSettings`, in memory). Without it a UI-test launch has them off.
+/// - `-PeepUITestChangeHighlights YES`: start with "Highlight changes when a file is saved" on
+///   (`ChangeHighlightsSettings`, in memory). Without it a UI-test launch has it off.
 ///
 /// UI-test launches (and hosted unit tests) never add to Open Recent (`DocumentController`).
 enum UITestHooks {
@@ -51,6 +53,8 @@ enum UITestHooks {
         static let commandLineToolFolderKey = "PeepUITestCommandLineToolFolder"
         /// Launch argument (a `UserDefaults` key): YES starts with collapsible sections on.
         static let collapsibleSectionsKey = "PeepUITestCollapsibleSections"
+        /// Launch argument (a `UserDefaults` key): YES starts with change highlights on.
+        static let changeHighlightsKey = "PeepUITestChangeHighlights"
     #endif
 
     /// Whether a UI test launched the app. Always `false` in Release builds.
@@ -161,6 +165,15 @@ enum UITestHooks {
     static var enablesCollapsibleSections: Bool {
         #if DEBUG
             isUITesting && UserDefaults.standard.bool(forKey: collapsibleSectionsKey)
+        #else
+            false
+        #endif
+    }
+
+    /// Whether a UI test asked for change highlights on. Always `false` in Release builds.
+    static var enablesChangeHighlights: Bool {
+        #if DEBUG
+            isUITesting && UserDefaults.standard.bool(forKey: changeHighlightsKey)
         #else
             false
         #endif

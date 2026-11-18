@@ -276,7 +276,7 @@ final class SettingsTests: DocumentWindowTestCase {
         #expect(width.defaultWidth == .narrow)
     }
 
-    @Test("the window: General, Markdown, and Quick Look panes, titled like the window, not restorable")
+    @Test("the window: General, Markdown, Reading, and Quick Look panes, titled like the window, not restorable")
     func window() throws {
         let controller = SettingsWindowController(model: model(), savesFrame: false)
         defer { controller.close() }
@@ -285,7 +285,7 @@ final class SettingsTests: DocumentWindowTestCase {
         #expect(!window.isRestorable)
         let tabs = try #require(window.contentViewController as? NSTabViewController)
         #expect(tabs.tabStyle == .toolbar)
-        #expect(tabs.tabViewItems.map(\.label) == ["General", "Markdown", "Quick Look"])
+        #expect(tabs.tabViewItems.map(\.label) == ["General", "Markdown", "Reading", "Quick Look"])
 
         controller.show()
         #expect(window.isVisible)

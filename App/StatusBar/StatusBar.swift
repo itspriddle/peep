@@ -12,6 +12,7 @@ struct StatusBar: View {
     let chrome: WindowChrome
     let toggleOutline: () -> Void
     let togglePinned: () -> Void
+    let scrollToNextChange: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -21,6 +22,9 @@ struct StatusBar: View {
             ChromeBorder(chrome: chrome)
             HStack(spacing: 12) {
                 WordCountItem(count: document.content?.page.wordCount)
+                if let changes = model.offScreenChanges {
+                    ChangesItem(changes: changes, scrollToNext: scrollToNextChange)
+                }
                 Spacer(minLength: 0)
                 PinToggleItem(isPinned: model.isPinned, toggle: togglePinned)
                 OutlineToggleItem(isOutlineVisible: model.isOutlineVisible, toggle: toggleOutline)
@@ -73,6 +77,43 @@ struct PinToggleItem: View {
         .accessibilityLabel(title)
         .accessibilityValue(isPinned ? "on" : "off")
         .accessibilityIdentifier("pin-toggle")
+    }
+}
+
+/// Change marks out of view after a live reload: "Changed ↓ (2)", pointing at the next one
+/// (below first, as clicking scrolls); clicking scrolls to it.
+struct ChangesItem: View {
+    let changes: OffScreenChanges
+    let scrollToNext: () -> Void
+
+    var body: some View {
+        let arrow = changes.below > 0 ? "arrow.down" : "arrow.up"
+        Button(action: scrollToNext) {
+            HStack(spacing: 3) {
+                Text("Changed")
+                Image(systemName: arrow)
+                Text("(\(changes.total.formatted()))").monospacedDigit()
+            }
+            .foregroundStyle(.tint)
+        }
+        .buttonStyle(.borderless)
+        .help("Scroll to the next change")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Self.label(for: changes))
+        .accessibilityHint("Scrolls to the next change")
+        .accessibilityIdentifier("changes-item")
+    }
+
+    /// "2 changes below", "1 change above", "3 changes out of view".
+    static func label(for changes: OffScreenChanges) -> String {
+        let noun = changes.total == 1 ? "change" : "changes"
+        let place =
+            switch (changes.above > 0, changes.below > 0) {
+            case (true, true): "out of view"
+            case (true, false): "above"
+            default: "below"
+            }
+        return "\(changes.total.formatted()) \(noun) \(place)"
     }
 }
 

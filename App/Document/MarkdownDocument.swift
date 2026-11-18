@@ -1,4 +1,5 @@
 import AppKit
+import PeepCore
 import os
 
 /// One open Markdown file. Peep is a viewer: the document reads and re-reads its file but never
@@ -57,6 +58,15 @@ final class MarkdownDocument: NSDocument {
 
     /// Watches the file while the document has windows (live reload).
     @ObservationIgnored private var liveReloader: LiveReloader?
+
+    /// What the last live reload changed, for the windows to mark ("Highlight changes when a file
+    /// is saved"); `nil` after any other `setContent(_:changes:)` (a first load, revert, or
+    /// Settings re-render) and while the setting is off.
+    @ObservationIgnored private(set) var contentChanges: SourceChanges?
+
+    /// The setting that decides whether live reloads work out `contentChanges`. Tests set their
+    /// own store right after opening.
+    @ObservationIgnored var changeHighlightsSettings: ChangeHighlightsSettings = .shared
 
     /// The Markdown settings (#55) this document renders with. Changing them (or the store)
     /// renders the document again. Tests set their own store right after opening.
@@ -232,10 +242,14 @@ final class MarkdownDocument: NSDocument {
     ///
     /// Content rendered before Settings > Markdown changed (a first render or live reload that
     /// was already running) is shown, then rendered again with the current preferences.
-    func setContent(_ content: DocumentContent) {
+    ///
+    /// `changes` is what a live reload changed (`LiveReloader`); every other caller leaves it
+    /// out, which clears the windows' marks.
+    func setContent(_ content: DocumentContent, changes: SourceChanges? = nil) {
         LaunchTiming.mark("rendered")
         dropPendingRender()
         self.content = content
+        contentChanges = changes
         let documentName: String = fileURL?.lastPathComponent ?? displayName
         if content.preferences.customPreprocessor != nil {
             customPreprocessorSettings.recordRun(

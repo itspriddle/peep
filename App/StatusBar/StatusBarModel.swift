@@ -13,10 +13,21 @@ final class StatusBarModel {
     /// Whether the window is pinned, for the pin toggle's on state. Owned by
     /// `DocumentWindowController.isPinned`, which also sets the window's level.
     var isPinned: Bool
+    /// Change marks out of view after a live reload (`DocumentWindowController+ChangeHighlights`),
+    /// or nil when there are none: the changes item shows while it is set.
+    var offScreenChanges: OffScreenChanges?
 
     init(isVisible: Bool, isOutlineVisible: Bool = false, isPinned: Bool = false) {
         self.isVisible = isVisible
         self.isOutlineVisible = isOutlineVisible
         self.isPinned = isPinned
     }
+}
+
+/// How many change marks are above and below the viewport (`App/Scripts/ChangeMarks.js`).
+struct OffScreenChanges: Equatable, Sendable {
+    var above: Int
+    var below: Int
+
+    var total: Int { above + below }
 }
