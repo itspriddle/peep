@@ -16,7 +16,7 @@ import PeepCore
 /// | Content width | `ContentWidthSettings.defaultWidth` | new windows (#47) |
 /// | Custom content width | `ContentWidthSettings.isCustomWidthEnabled`, `customWidthPoints` | every window, live |
 /// | Collapsible sections | `CollapsibleSectionsSettings.isEnabled` | every window, live |
-/// | Highlight changes on save | `ChangeHighlightsSettings.isEnabled` | every window, next reload |
+/// | Highlight changes on save (Reading pane) | `ChangeHighlightsSettings.isEnabled` | every window, next reload |
 /// | Default Markdown viewer | `DefaultViewer` (Launch Services) | system-wide |
 /// | Default flavor | `MarkdownSettings.defaultFlavorID` | every document, live (#55) |
 /// | Frontmatter display | `MarkdownSettings.frontmatterDisplay` | every document, live (#55) |
@@ -34,7 +34,8 @@ import PeepCore
 ///
 /// To add a setting: give its store an injectable `UserDefaults` (and a change notification if
 /// something else can change it), add a property here, read it in `refresh()`, add a `set…`
-/// method, and add a row to its pane (`GeneralSettingsView`, `MarkdownSettingsView`).
+/// method, and add a row to its pane (`GeneralSettingsView`, `MarkdownSettingsView`,
+/// `ReadingSettingsView`).
 @MainActor
 @Observable
 final class SettingsModel: NSObject {

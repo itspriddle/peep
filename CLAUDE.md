@@ -151,7 +151,10 @@ lock the build database.
     `init(defaults:isPersistent:)`, a property and `set…` method on the model, and a row.
     `MarkdownSettingsView` (#55) is Settings > Markdown: default flavor, frontmatter display,
     built-in preprocessors (one row per `MarkdownSettings.optionalPreprocessors` entry), then
-    the custom preprocessor (#57) and processor (#106) sections.
+    the custom preprocessor (#57) and processor (#106) sections. `ReadingSettingsView` is
+    Settings > Reading: how open documents behave (change highlights). General has no room to
+    grow: CI's screen puts its last rows under the Dock (`UpdatesUITests`), so new settings go
+    in another pane.
   - `QuickLook/`: `QuickLookConfigurationPublisher` writes `QuickLookConfiguration` to the App
     Group's defaults on launch and on each `ThemeSettings` / `MarkdownSettings` change (custom
     theme files included); off under tests and without a team (`PEEP_APP_GROUP` in
@@ -195,8 +198,9 @@ lock the build database.
     folded blocks), via `WebViewCoordinator+Sections` and
     `DocumentWindowController+CollapsibleSections.swift`; View > Collapse/Expand All Sections is
     `SectionsMenu`. The `data-peep-folded` rule is in `ThemeBase`.
-  - `ChangeHighlights/`: `ChangeHighlightsSettings` (Settings > General's "Highlight changes
-    when a file is saved", off by default; `-PeepUITestChangeHighlights YES` under UI tests).
+  - `ChangeHighlights/`: `ChangeHighlightsSettings` (Settings > Reading's "Highlight changes
+    when a file is saved", `Settings/ReadingSettingsView`, off by default;
+    `-PeepUITestChangeHighlights YES` under UI tests).
     While it is on, `LiveReloader` diffs the old and new `renderedSource` off the main actor
     (not for a custom processor's page, which has no source lines) and passes
     `MarkdownDocument.setContent(_:changes:)` a `SourceChanges` (`contentChanges`; any other

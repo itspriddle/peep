@@ -57,7 +57,7 @@ final class ChangeHighlightsUITests: XCTestCase {
             "the item goes once the change is in view")
     }
 
-    func testOffByDefault() throws {
+    func testOffByDefaultAndTurnedOnInSettings() throws {
         let file = try copyFixture()
         let peep = PeepUITestApp.launch(opening: file)
         self.peep = peep
@@ -68,6 +68,22 @@ final class ChangeHighlightsUITests: XCTestCase {
         try Data(source.replacingOccurrences(of: "Paragraph 140.", with: "Paragraph 140, edited.").utf8)
             .write(to: file)
         peep.waitForRenderedText("Paragraph 140, edited.", in: window)
-        XCTAssertFalse(window.descendants(matching: .any)["changes-item"].firstMatch.waitForExistence(timeout: 2))
+        let item = window.descendants(matching: .any)["changes-item"].firstMatch
+        XCTAssertFalse(item.waitForExistence(timeout: 2))
+
+        // Settings > Reading turns it on for the next save.
+        let settings = peep.openSettings()
+        peep.showSettingsPane("Reading")
+        let toggle = settings.checkBoxes["settings-highlight-changes"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: PeepUITestApp.defaultTimeout))
+        XCTAssertEqual(toggle.value as? Int, 0)
+        toggle.click()
+        XCTAssertEqual(toggle.value as? Int, 1)
+        settings.typeKey("w", modifierFlags: .command)
+
+        let edited = try String(contentsOf: file, encoding: .utf8)
+        try Data(edited.replacingOccurrences(of: "Paragraph 130.", with: "Paragraph 130, edited.").utf8)
+            .write(to: file)
+        XCTAssertTrue(item.waitForExistence(timeout: PeepUITestApp.defaultTimeout), "the changes item")
     }
 }

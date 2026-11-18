@@ -112,14 +112,6 @@ struct GeneralSettingsView: View {
                 note(
                     "A heading folds everything up to the next heading of the same or a higher level. "
                         + "View > Collapse All Sections and Expand All Sections fold the whole document.")
-                Toggle(
-                    "Highlight changes when a file is saved",
-                    isOn: binding(\.highlightsChanges, model.setHighlightsChanges)
-                )
-                .accessibilityIdentifier("settings-highlight-changes")
-                note(
-                    "After a document's file changes, a bar beside each changed block fades out once you've "
-                        + "seen it. Changes out of view are counted in the status bar.")
             }
 
             Section {
