@@ -13,7 +13,7 @@ extension HTMLRenderer {
     /// 5. AST transforms: the flavor's and `options.builtInPreprocessors`, in `MarkdownTransform`
     ///    order.
     /// 6. HTML: sanitize raw HTML, collect headings and anchors, highlight code, write markup.
-    ///    The word count (`WordCount`) reads the same transformed body.
+    ///    The word count (`WordCount`) and `hasMermaidBlocks` read the same transformed body.
     public func render(_ markdown: String) -> RenderedDocument {
         let prepared = prepare(markdown)
         let renderer = prepared.renderer(from: self)
@@ -34,7 +34,8 @@ extension HTMLRenderer {
             blockedRemoteImages: blockedRemoteImages,
             overrides: prepared.overrides,
             flavor: prepared.options.flavor,
-            wordCount: WordCount.count(in: document)
+            wordCount: WordCount.count(in: document),
+            hasMermaidBlocks: MermaidBlocks.contains(in: document)
         )
     }
 

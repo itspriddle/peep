@@ -100,11 +100,14 @@ public struct RenderedDocument: Sendable, Equatable {
     public var flavor: Flavor
     /// The words in the rendered body (`WordCount`): what the reader sees, without frontmatter.
     public var wordCount: Int
+    /// Whether the body has a mermaid code block (`MermaidBlocks`, #117). The HTML keeps it as a
+    /// code block; the app's viewer draws it, loading mermaid only for pages where this is true.
+    public var hasMermaidBlocks: Bool
 
     public init(
         html: String, title: String? = nil, headings: [Heading] = [], frontmatter: Frontmatter? = nil,
         blockedRemoteImages: [RemoteImage] = [], overrides: DocumentOverrides = .none, flavor: Flavor = .gfm,
-        wordCount: Int = 0
+        wordCount: Int = 0, hasMermaidBlocks: Bool = false
     ) {
         self.html = html
         self.title = title
@@ -114,6 +117,7 @@ public struct RenderedDocument: Sendable, Equatable {
         self.overrides = overrides
         self.flavor = flavor
         self.wordCount = wordCount
+        self.hasMermaidBlocks = hasMermaidBlocks
     }
 }
 
