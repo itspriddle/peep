@@ -116,7 +116,11 @@ lock the build database.
     a case plus its `render(_:budget:)` branch. `SVGWriter` is the only markup source (fixed
     names, escaped text, `SVGNumber`s, `SVGPath`); never write an input string. Maps:
     `GeoJSON` / `TopoJSON` decode (via `JSONValues`) into `GeoGeometry`, `MapProjection` (Web
-    Mercator, fitted), `MapDiagram` (classed paths; colors in `ThemeBase`).
+    Mercator, fitted), `MapDiagram` (classed paths; colors in `ThemeBase`). STL (#116): `STL`
+    (ASCII, line-based, tolerant of case and whitespace, 50k facets; normals recomputed),
+    `STLProjection` (fixed isometric camera, fit, back-face culling, painter's sort, Lambert
+    shade in 8 buckets), `STLDiagram` (a `<path class="peep-stl-sN">` per run of one shade in
+    painter's order; colors in `ThemeBase`, `oklch(from currentColor …)`).
     `MarkdownNode.rewritingCodeBlocks` (AST) is the walk both code block passes share.
   - `AppOpening/`: what the CLI and the app agree on (M5; untrusted on the app's side).
     `AppOpenEvent` builds and reads the Open Documents event and its parameters
