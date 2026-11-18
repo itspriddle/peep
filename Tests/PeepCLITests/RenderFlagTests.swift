@@ -57,6 +57,29 @@ struct RenderFlagTests {
         #expect(off.stdout.hasPrefix("<pre><code class=\"language-geojson\">"))
     }
 
+    @Test("stl blocks are models; --no-diagrams leaves them code")
+    func stlModels() async {
+        let source = """
+            ```stl
+            solid triangle
+            facet normal 0 0 1
+            outer loop
+            vertex 0 0 0
+            vertex 1 0 0
+            vertex 0 1 0
+            endloop
+            endfacet
+            endsolid triangle
+            ```
+
+            """
+        let enabled = await CLIHarness.run(["--fragment"], stdin: source)
+        let off = await CLIHarness.run(["--fragment", "--no-diagrams"], stdin: source)
+        #expect(enabled.stdout.hasPrefix("<figure class=\"peep-diagram peep-diagram-stl\"><svg class=\"peep-stl\""))
+        #expect(!off.stdout.contains("<svg"))
+        #expect(off.stdout.hasPrefix("<pre><code class=\"language-stl\">"))
+    }
+
     @Test("--no-heading-anchors drops heading ids")
     func headingAnchors() async {
         let enabled = await CLIHarness.run(["--fragment"], stdin: "# Hello\n")

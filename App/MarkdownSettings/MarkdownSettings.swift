@@ -20,7 +20,7 @@ struct MarkdownPreferences: Equatable, Sendable {
     /// The custom processor (#106), which renders the body in place of Peep's renderer, or `nil`
     /// when it's off. Filled in and ignored like `customPreprocessor`.
     var customProcessor: CustomProgramPreference?
-    /// Draw geojson and topojson blocks as maps (M7, `RenderOptions.diagrams`).
+    /// Draw geojson and topojson blocks as maps and stl blocks as models (M7, `RenderOptions.diagrams`).
     var rendersDiagrams = true
 
     /// GFM, frontmatter hidden, no built-in preprocessors, diagrams on: the app before #55, and
@@ -170,7 +170,7 @@ final class MarkdownSettings {
         }
     }
 
-    /// Whether geojson and topojson blocks are drawn as maps; on by default.
+    /// Whether geojson, topojson, and stl blocks are drawn as maps and models; on by default.
     var rendersDiagrams: Bool {
         get {
             guard isPersistent else {
