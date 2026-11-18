@@ -47,19 +47,24 @@ public struct QuickLookConfiguration: Codable, Sendable, Equatable {
     public var frontmatterDisplay: String?
     /// Settings > Markdown's built-in preprocessors (`MarkdownTransform.rawValue`).
     public var builtInPreprocessors: [String]
+    /// Settings > Markdown's "Render diagrams" (M7). `nil` (a value published before it existed)
+    /// is on, the default.
+    public var diagrams: Bool?
 
     /// What Quick Look uses before the app has published anything (or without an App Group).
     public static let `default` = QuickLookConfiguration()
 
     public init(
         themeID: String? = nil, customTheme: QuickLookCustomTheme? = nil, flavorID: String? = nil,
-        frontmatterDisplay: FrontmatterDisplay = .hidden, builtInPreprocessors: Set<MarkdownTransform> = []
+        frontmatterDisplay: FrontmatterDisplay = .hidden, builtInPreprocessors: Set<MarkdownTransform> = [],
+        rendersDiagrams: Bool = true
     ) {
         self.themeID = themeID
         self.customTheme = customTheme
         self.flavorID = flavorID
         self.frontmatterDisplay = frontmatterDisplay.rawValue
         self.builtInPreprocessors = MarkdownTransform.allCases.filter(builtInPreprocessors.contains).map(\.rawValue)
+        diagrams = rendersDiagrams ? nil : false
     }
 
     /// Decodes `data` as `encoded()` wrote it; anything else (missing, malformed, wrong types)
@@ -103,6 +108,11 @@ public struct QuickLookConfiguration: Codable, Sendable, Equatable {
     /// The frontmatter display (unknown values hide it).
     public var frontmatter: FrontmatterDisplay {
         frontmatterDisplay.flatMap(FrontmatterDisplay.init(rawValue:)) ?? .hidden
+    }
+
+    /// Whether geojson and topojson blocks are drawn as maps (`RenderOptions.diagrams`).
+    public var rendersDiagrams: Bool {
+        diagrams ?? true
     }
 
     /// The built-in preprocessors, limited to `optionalPreprocessors`.

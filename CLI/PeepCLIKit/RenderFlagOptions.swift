@@ -3,7 +3,7 @@ import Foundation
 import PeepCore
 
 /// Headless render options (#65): frontmatter display, wiki links, source lines, highlighting,
-/// remote images, heading anchors, and frontmatter diagnostics.
+/// diagrams (M7), remote images, heading anchors, and frontmatter diagnostics.
 ///
 /// Flags only: the CLI never reads the app's Settings > Markdown, so the same command gives the
 /// same output whatever the app is set to. There is deliberately no `--no-sanitize` (VISION's
@@ -39,6 +39,11 @@ public struct RenderFlagOptions: ParsableArguments, Sendable {
     @Flag(name: .customLong("no-highlight"), help: "Don't syntax-highlight fenced code blocks.")
     public var noHighlight = false
 
+    @Flag(
+        name: .customLong("no-diagrams"),
+        help: "Don't draw geojson and topojson code blocks as maps (static SVG, shapes only).")
+    public var noDiagrams = false
+
     @Flag(name: .customLong("no-heading-anchors"), help: "Don't give headings ids and anchor links.")
     public var noHeadingAnchors = false
 
@@ -53,13 +58,13 @@ public struct RenderFlagOptions: ParsableArguments, Sendable {
     /// Whether any flag here was given. They change headless output only, so without `--html`,
     /// `--fragment`, or `--output` they are a usage error (`PeepCommand.validate()`).
     var isSet: Bool {
-        frontmatter != .hidden || wikiLinks != nil || sourceLines || noHighlight || noHeadingAnchors
+        frontmatter != .hidden || wikiLinks != nil || sourceLines || noHighlight || noDiagrams || noHeadingAnchors
             || blockRemoteImages || verbose
     }
 
     /// Sets this group's `RenderOptions`. Without flags these are `RenderOptions`' defaults
-    /// (frontmatter hidden, no wiki links, no `data-source-line`, highlighting and heading
-    /// anchors on, remote images kept). `--wiki-links`/`--no-wiki-links` pin `.wikiLinks`, so
+    /// (frontmatter hidden, no wiki links, no `data-source-line`, highlighting, diagrams, and
+    /// heading anchors on, remote images kept). `--wiki-links`/`--no-wiki-links` pin `.wikiLinks`, so
     /// the document's `peep.wikilinks` doesn't replace the flag.
     func apply(to options: inout RenderOptions) {
         options.frontmatterDisplay = frontmatter.display
@@ -73,6 +78,7 @@ public struct RenderFlagOptions: ParsableArguments, Sendable {
         }
         options.sourceLines = sourceLines
         options.highlighting = !noHighlight
+        options.diagrams = !noDiagrams
         options.headingAnchors = !noHeadingAnchors
         if blockRemoteImages {
             options.remoteImages = .block

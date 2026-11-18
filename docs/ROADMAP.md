@@ -14,6 +14,7 @@ them when the milestone is broken down.
 | [M5](#m5-cli)                           | CLI                            | -         | Done   |
 | [Gate](#gate-choose-the-name)           | Choose the final name          | -         | Done   |
 | [M6](#m6-distribution-and-v010)         | Distribution                   | **0.1.0** | Done   |
+| [M7](#m7-diagrams)                      | Diagrams                       | -         |        |
 | [1.0](#10)                              | PDF, math, RTL, proofreading…  | 1.0       |        |
 
 ## M0: Foundation
@@ -1010,6 +1011,22 @@ tag-driven workflow. Verified by hand:
   the plan).
 - The DMG has no custom background or layout.
 
+## M7: Diagrams
+
+GitHub's fenced diagram blocks ([creating diagrams](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams)),
+within the security model: tracking issue #118, integration branch `feature/m7-diagrams`.
+
+- Maps (#115): ` ```geojson ` and ` ```topojson ` blocks as a static inline SVG, shapes only (no
+  tiles: no remote content). Pure Swift in PeepCore (`Diagrams/`), so the viewer, `peep --html`,
+  Copy as HTML, and Quick Look get the same markup and no JavaScript. `RenderOptions.diagrams`
+  (off in spec mode), `peep --no-diagrams`, Settings > Markdown > Render diagrams (published to
+  Quick Look). Web Mercator fitted to the shapes; shapes crossing the antimeridian aren't split.
+  Caps: 1 MB per block, 200,000 coordinates per document; over a cap or unreadable, the block
+  stays code. Also the plumbing the other diagram kinds use (`DiagramKind`,
+  `DiagramRendering`, `SVGWriter`).
+- ASCII STL (#116): a static shaded SVG, no interactive viewer; plugs into the same plumbing.
+- Mermaid (#117): viewer only, vendored, in its own content world; elsewhere a code block.
+
 ## 1.0
 
 A running list of what 1.0 includes, in rough priority order. Each becomes its own milestone
@@ -1017,8 +1034,8 @@ A running list of what 1.0 includes, in rough priority order. Each becomes its o
 
 - **PDF export:** `WKWebView.createPDF`/print pipeline, print-specific CSS per theme, page size,
   margins, headers/footers, `peep --pdf`
-- **Math and diagrams:** KaTeX (bundled) for `$…$` / `$$…$$`, optionally Mermaid; requires the
-  bundle-only JS policy from M1
+- **Math:** KaTeX (bundled) for `$…$` / `$$…$$`; requires the bundle-only JS policy from M1
+  (diagrams are M7)
 - **Outlining and academic styles:** outline mode, APA-style theme (title page, running head,
   references)
 - **RTL text:** per-paragraph direction detection (`dir="auto"`), RTL-aware themes
