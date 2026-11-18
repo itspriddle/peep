@@ -40,9 +40,9 @@ public struct RenderOptions: Sendable, Equatable {
     /// Syntax-highlight fenced code blocks that name a language, at render time (#11). Needs
     /// `HTMLRenderer.highlighter`; blocks render as plain escaped code without one.
     public var highlighting = true
-    /// Draw fenced ` ```geojson ` and ` ```topojson ` blocks as static SVG maps, at render time
-    /// (M7, `DiagramRendering`): shapes only, no tiles, no JavaScript. Off, or for a block that
-    /// can't be drawn, they render as code.
+    /// Draw fenced ` ```geojson ` and ` ```topojson ` blocks as static SVG maps and ` ```stl `
+    /// (ASCII STL) blocks as shaded SVG models, at render time (M7, `DiagramRendering`): no
+    /// tiles, no JavaScript. Off, or for a block that can't be drawn, they render as code.
     public var diagrams = true
     /// Remote images (`RemoteImage`): kept as `<img>` (GitHub-compatible, `peep --html`), or
     /// replaced with a labeled placeholder (#20). The viewer blocks them until the user opts in.

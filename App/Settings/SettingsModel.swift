@@ -98,7 +98,7 @@ final class SettingsModel: NSObject {
     private(set) var frontmatterDisplay = FrontmatterDisplay.hidden
     /// The built-in preprocessors that are on (a subset of `optionalPreprocessors`).
     private(set) var builtInPreprocessors: Set<MarkdownTransform> = []
-    /// Whether geojson and topojson blocks are drawn as maps.
+    /// Whether geojson, topojson, and stl blocks are drawn (maps and models).
     private(set) var rendersDiagrams = true
     /// Whether this build checks for updates at all (`SoftwareUpdates`).
     private(set) var isUpdaterActive = false
@@ -322,7 +322,7 @@ final class SettingsModel: NSObject {
         refresh()
     }
 
-    /// Draws geojson and topojson blocks as maps (or leaves them code). Open documents render
+    /// Draws geojson, topojson, and stl blocks as maps and models (or leaves them code). Open documents render
     /// again in place.
     func setRendersDiagrams(_ renders: Bool) {
         markdownSettings.rendersDiagrams = renders

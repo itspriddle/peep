@@ -110,7 +110,7 @@ public struct QuickLookConfiguration: Codable, Sendable, Equatable {
         frontmatterDisplay.flatMap(FrontmatterDisplay.init(rawValue:)) ?? .hidden
     }
 
-    /// Whether geojson and topojson blocks are drawn as maps (`RenderOptions.diagrams`).
+    /// Whether geojson, topojson, and stl blocks are drawn (`RenderOptions.diagrams`).
     public var rendersDiagrams: Bool {
         diagrams ?? true
     }

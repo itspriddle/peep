@@ -41,7 +41,7 @@ public struct RenderFlagOptions: ParsableArguments, Sendable {
 
     @Flag(
         name: .customLong("no-diagrams"),
-        help: "Don't draw geojson and topojson code blocks as maps (static SVG, shapes only).")
+        help: "Don't draw geojson, topojson, and stl code blocks (static SVG maps and models).")
     public var noDiagrams = false
 
     @Flag(name: .customLong("no-heading-anchors"), help: "Don't give headings ids and anchor links.")
