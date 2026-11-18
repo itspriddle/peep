@@ -1030,7 +1030,12 @@ within the security model: tracking issue #118, integration branch `feature/m7-d
   three-quarter isometric view fitted to the model, culls back faces, sorts back to front, and
   quantizes Lambert shading to 8 classes that `ThemeBase` colors from the text color. Caps:
   50,000 facets per block, plus the shared 1 MB and coordinate budget (3 per facet).
-- Mermaid (#117): viewer only, vendored, in its own content world; elsewhere a code block.
+- Mermaid (#117): viewer only. ` ```mermaid ` blocks drawn by a vendored mermaid (12.3.0,
+  `make vendor-mermaid`) in its own content world, `peep-diagrams`, with no message handlers,
+  under the unchanged CSP (VISION, security model). Only pages with mermaid blocks load it;
+  redrawn after live reloads and on theme or appearance changes, off with Render diagrams; a
+  block it can't draw stays code with a note. `peep --html`, Copy as HTML, and Quick Look keep
+  the code block.
 
 ## 1.0
 

@@ -67,9 +67,14 @@ final class DocumentWebView: WKWebView {
         return !isOpaque
     }
 
+    /// Called after the effective appearance changes (light and dark). Set by the coordinator,
+    /// which redraws diagrams in the matching colors (#117).
+    var appearanceDidChange: (() -> Void)?
+
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         applyThemeUnderPageBackgroundColor()
+        appearanceDidChange?()
     }
 
     private func applyThemeUnderPageBackgroundColor() {

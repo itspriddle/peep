@@ -16,6 +16,8 @@
 ///   staying hidden (the chevron's look is a default);
 /// - change marks (`[data-peep-changes]`, the app's `ChangeMarks.js`) staying out of the way:
 ///   positioned over the page, never hit, never printed (their color and fade are defaults);
+/// - a drawn mermaid block's code (`pre[data-peep-diagram="rendered"]`, the app's
+///   `MermaidDiagrams.js`) staying hidden behind its diagram (the error note's look is a default);
 
 /// - diagrams' look (`.peep-diagram`, the map and STL classes; M7) is a default;
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
@@ -82,6 +84,10 @@ public enum ThemeBase {
            or focus, and always while collapsed. Never set by documents (the sanitizer drops
            `data-` attributes). */
         [data-peep-folded] { display: none !important; }
+        /* Mermaid diagrams (#117, the app's MermaidDiagrams.js): a drawn block's code stays in the
+           page, hidden, after its figure; one mermaid couldn't draw shows a note after it. */
+        pre[data-peep-diagram="rendered"] { display: none !important; }
+        .peep-diagram-error { margin-top: -0.5em; font-size: 0.85em; opacity: 0.75; }
         [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6) { cursor: pointer; }
         [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6)::after {
           content: "\\25BE"; display: inline-block; margin-left: 0.4em; font-size: 0.6em;

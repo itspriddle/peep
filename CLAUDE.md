@@ -28,6 +28,7 @@ make html-entities    # regenerate Generated/HTMLEntityTable.swift from the WHAT
 make app-icon         # regenerate AppIcon.appiconset and Site/public icons from Branding/*.svg
 make vendor-highlightjs  # re-vendor highlight.js (HLJS_VERSION=x.y.z) as generated Swift
 make vendor-github-markdown-css  # re-vendor the GitHub theme (GHCSS_VERSION=x.y.z) as generated Swift
+make vendor-mermaid   # re-vendor mermaid (MERMAID_VERSION=x.y.z) into Vendor/mermaid (needs npm)
 swift run peep --html FILE   # render to stdout without Xcode
 scripts/measure-cold-open [-f] [-c] FILE  # Release cold open to first paint, median of N launches
                                      # (GUI); -f adds the bare-WKWebView floor (scripts/cold-open-floor.swift),
@@ -122,6 +123,9 @@ lock the build database.
     shade in 8 buckets), `STLDiagram` (a `<path class="peep-stl-sN">` per run of one shade in
     painter's order; colors in `ThemeBase`, `oklch(from currentColor …)`).
     `MarkdownNode.rewritingCodeBlocks` (AST) is the walk both code block passes share.
+    Mermaid (#117) isn't a `DiagramKind`: `MermaidBlocks` only finds blocks (`mermaid`, any
+    case) for `RenderedDocument.hasMermaidBlocks` (false with `diagrams` off); the HTML keeps
+    the code block and only the app's viewer draws it.
   - `AppOpening/`: what the CLI and the app agree on (M5; untrusted on the app's side).
     `AppOpenEvent` builds and reads the Open Documents event and its parameters
     (`AppOpenParameters`: `PepT` theme, `PepW` wait token in `+Wait`, with the
@@ -135,7 +139,8 @@ lock the build database.
     never calls a third-party Markdown thumbnailer (its own text one wins; FB24481377).
   - `Generated/`, `*.generated.swift`: generator output (`make emoji`, `make html-entities`,
     `make vendor-highlightjs`); never edit by hand. `Vendor/` holds vendored sources with a
-    MANIFEST and license.
+    MANIFEST and license; `Vendor/mermaid` (`make vendor-mermaid`, needs npm) is the one used
+    as is, `mermaid.min.js` read from the app's Resources, with `NOTICES` for its bundled packages.
   - `Acknowledgements/`: `Acknowledgements` reads the third-party notices manifest (#85) and
     reflows license text (`paragraphs(of:)`) for the About panel.
 - `Acknowledgements/` (repo root): `Acknowledgements.json` lists every bundled third-party
@@ -300,9 +305,15 @@ lock the build database.
     `scroll(toFragment:)`). `WebViewPrewarmer` starts the first window's web view at launch
     (#40). `WebViewConfiguration` holds preferences and user scripts;
     `LocalResourceSchemeHandler` serves `peep-doc` images; `+Navigation.swift` applies
-    `LinkPolicy`.
-  - `Scripts/`: bundled JS run only in `AppScripts.world`; pass values as arguments, never
-    splice them into source.
+    `LinkPolicy`. Mermaid (#117): `DiagramScripts` (the `peep-diagrams` world, no message
+    handlers ever; its source is `Vendor/mermaid/mermaid.min.js` plus `MermaidDiagrams.js`) and
+    `+Diagrams.swift` (evaluated once per page, only when `RenderedPage.hasMermaidBlocks`, after
+    `load`; redrawn after `updateContent`/`replaceContent` swaps and on theme or appearance
+    darkness changes; serialized in `pendingDiagramRender`, which the window awaits for a mermaid
+    page before scrolling). Render diagrams off makes `hasMermaidBlocks` false
+    (`RenderOptions.diagrams`), and the Settings re-render swaps the code blocks back in.
+  - `Scripts/`: bundled JS run only in `AppScripts.world` (but `MermaidDiagrams.js`, in
+    `DiagramScripts.world`); pass values as arguments, never splice them into source.
   - `Performance/`: `LaunchTiming`, launch milestones that `scripts/measure-cold-open` reads
     (on only with `PEEP_LAUNCH_TIMING` set; kept in Release, which is what it measures).
   - `Menus/`: `MainMenu` builds the menu bar in code. A feature adds a `MenuContribution` type

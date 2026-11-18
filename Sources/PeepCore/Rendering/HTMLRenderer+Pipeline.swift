@@ -14,7 +14,7 @@ extension HTMLRenderer {
     ///    order.
     /// 6. HTML: draw diagrams (`DiagramRendering`), sanitize raw HTML, collect headings and
     ///    anchors, highlight code, write markup. The word count (`WordCount`) reads the same
-    ///    tree, so a block drawn as a diagram has no words.
+    ///    tree, so a block drawn as a diagram has no words; so does `hasMermaidBlocks`.
     public func render(_ markdown: String) -> RenderedDocument {
         let prepared = prepare(markdown)
         let renderer = prepared.renderer(from: self)
@@ -35,7 +35,8 @@ extension HTMLRenderer {
             blockedRemoteImages: blockedRemoteImages,
             overrides: prepared.overrides,
             flavor: prepared.options.flavor,
-            wordCount: WordCount.count(in: document)
+            wordCount: WordCount.count(in: document),
+            hasMermaidBlocks: prepared.options.diagrams && MermaidBlocks.contains(in: document)
         )
     }
 

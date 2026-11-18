@@ -850,6 +850,19 @@ editor or a browser.
   with `callAsyncJavaScript` using fixed function bodies; every value (lines, fragments, HTML)
   is passed as an argument, never spliced into script source. Tests prove page scripts stay
   blocked while app scripts run.
+- **Mermaid runs in its own world (#117).** The viewer draws ` ```mermaid ` blocks with a
+  vendored, pinned mermaid (`Vendor/mermaid`, `make vendor-mermaid`) in a second isolated world,
+  `peep-diagrams` (`DiagramScripts`), separate from the app scripts' and with **no message
+  handlers**, so a mermaid bug can reach neither the app's bridge nor the app. The CSP and the
+  page JavaScript setting don't change: mermaid needs no `unsafe-eval`, and its SVG's inline
+  `<style>` is covered by `style-src 'unsafe-inline'` (spike, #117). It's evaluated only in pages
+  that have mermaid blocks while Render diagrams is on (`RenderedDocument.hasMermaidBlocks`), with
+  `securityLevel: "strict"` (labels sanitized by its DOMPurify, no click handlers); the block's
+  text is read as a value, and the SVG is parsed inert and stripped of scripts, event
+  attributes, and `javascript:` links before it goes in a `figure.peep-diagram` after the hidden
+  code block. An image in a label loads only as the CSP and `LocalImagePolicy` allow, like any
+  document image. Headless output, Copy as HTML, and Quick Look keep the `language-mermaid` code
+  block: no JavaScript runs outside the viewer.
 - Raw HTML in Markdown is sanitized per a defined policy rather than passed through blindly.
   - **No `--no-sanitize` (#65).** The CLI has no way to turn sanitizing off. Headless output is
     a page meant to be opened in a browser, where page JavaScript isn't disabled as it is in
