@@ -9,7 +9,7 @@ struct TopoJSONTests {
         return try TopoJSON.decode(json, coordinateLimit: &limit)
     }
 
-    static func p(_ longitude: Double, _ latitude: Double) -> GeoPosition {
+    static func pos(_ longitude: Double, _ latitude: Double) -> GeoPosition {
         GeoPosition(longitude: longitude, latitude: latitude)
     }
 
@@ -27,30 +27,37 @@ struct TopoJSONTests {
              "objects":{"a":{"type":"LineString","arcs":[0]}},
              "arcs":[[[0,0],[2,0],[0,3],[-1,-1]]]}
             """
-        #expect(try Self.decode(json) == [.lineString([Self.p(10, -20), Self.p(11, -20), Self.p(11, -14), Self.p(10.5, -16)])])
+        #expect(
+            try Self.decode(json) == [
+                .lineString([Self.pos(10, -20), Self.pos(11, -20), Self.pos(11, -14), Self.pos(10.5, -16)])
+            ])
     }
 
     @Test("without a transform, arcs are absolute positions")
     func absoluteArcs() throws {
         let json = Self.topology(#"{"a":{"type":"LineString","arcs":[0]}}"#)
-        #expect(try Self.decode(json) == [.lineString([Self.p(0, 0), Self.p(2, 0), Self.p(4, 0)])])
+        #expect(try Self.decode(json) == [.lineString([Self.pos(0, 0), Self.pos(2, 0), Self.pos(4, 0)])])
     }
 
     @Test("a negative index is the arc ~i reversed, and joined arcs share their point once")
     func reversedAndJoined() throws {
-        let p = Self.p
+        let pos = Self.pos
         let reversed = Self.topology(#"{"a":{"type":"LineString","arcs":[-1]}}"#)
-        #expect(try Self.decode(reversed) == [.lineString([p(4, 0), p(2, 0), p(0, 0)])])
+        #expect(try Self.decode(reversed) == [.lineString([pos(4, 0), pos(2, 0), pos(0, 0)])])
         // Arc 0 ends at (4, 0) where arc 1 starts.
         let joined = Self.topology(#"{"a":{"type":"Polygon","arcs":[[0,1]]}}"#)
-        #expect(try Self.decode(joined) == [.polygon([[p(0, 0), p(2, 0), p(4, 0), p(4, 4), p(0, 4), p(0, 0)]])])
+        #expect(
+            try Self.decode(joined) == [.polygon([[pos(0, 0), pos(2, 0), pos(4, 0), pos(4, 4), pos(0, 4), pos(0, 0)]])])
         let backwards = Self.topology(#"{"a":{"type":"Polygon","arcs":[[-2,-1]]}}"#)
-        #expect(try Self.decode(backwards) == [.polygon([[p(0, 0), p(0, 4), p(4, 4), p(4, 0), p(2, 0), p(0, 0)]])])
+        #expect(
+            try Self.decode(backwards) == [
+                .polygon([[pos(0, 0), pos(0, 4), pos(4, 4), pos(4, 0), pos(2, 0), pos(0, 0)]])
+            ])
     }
 
     @Test("every geometry type decodes; objects are drawn in name order; null geometries are skipped")
     func geometryTypes() throws {
-        let p = Self.p
+        let pos = Self.pos
         let objects = """
             {"b":{"type":"GeometryCollection","geometries":[
                 {"type":"Point","coordinates":[1,2]},
@@ -60,13 +67,13 @@ struct TopoJSONTests {
                 {"type":"MultiPolygon","arcs":[[[1]]]}]},
              "a":{"type":"Point","coordinates":[2,1]}}
             """
-        let line = [p(0, 0), p(2, 0), p(4, 0)]
+        let line = [pos(0, 0), pos(2, 0), pos(4, 0)]
         #expect(
             try Self.decode(Self.topology(objects)) == [
-                .point(p(2, 1)),
+                .point(pos(2, 1)),
                 .collection([
-                    .point(p(1, 2)), .multiPoint([p(1, 2), p(3, 4)]), .multiLineString([line, line.reversed()]),
-                    .multiPolygon([[[p(4, 0), p(4, 4), p(0, 4), p(0, 0)]]]),
+                    .point(pos(1, 2)), .multiPoint([pos(1, 2), pos(3, 4)]), .multiLineString([line, line.reversed()]),
+                    .multiPolygon([[[pos(4, 0), pos(4, 4), pos(0, 4), pos(0, 0)]]]),
                 ]),
             ])
     }
@@ -76,7 +83,7 @@ struct TopoJSONTests {
         let json = Self.topology(
             #"{"a":{"type":"MultiPoint","coordinates":[[1,1],[1,1]]}}"#,
             transform: #"{"scale":[2,3],"translate":[1,1]}"#)
-        #expect(try Self.decode(json) == [.multiPoint([Self.p(3, 4), Self.p(3, 4)])])
+        #expect(try Self.decode(json) == [.multiPoint([Self.pos(3, 4), Self.pos(3, 4)])])
     }
 
     @Test(

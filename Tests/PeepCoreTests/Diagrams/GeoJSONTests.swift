@@ -15,38 +15,44 @@ struct GeoJSONTests {
 
     @Test("every geometry type decodes")
     func geometryTypes() throws {
-        let p = Self.position
-        #expect(try Self.decode(#"{"type":"Point","coordinates":[1,2]}"#) == [.point(p(1, 2))])
+        let pos = Self.position
+        #expect(try Self.decode(#"{"type":"Point","coordinates":[1,2]}"#) == [.point(pos(1, 2))])
         #expect(
-            try Self.decode(#"{"type":"MultiPoint","coordinates":[[1,2],[3,4]]}"#) == [.multiPoint([p(1, 2), p(3, 4)])])
+            try Self.decode(#"{"type":"MultiPoint","coordinates":[[1,2],[3,4]]}"#) == [
+                .multiPoint([pos(1, 2), pos(3, 4)])
+            ])
         #expect(
-            try Self.decode(#"{"type":"LineString","coordinates":[[1,2],[3,4]]}"#) == [.lineString([p(1, 2), p(3, 4)])])
+            try Self.decode(#"{"type":"LineString","coordinates":[[1,2],[3,4]]}"#) == [
+                .lineString([pos(1, 2), pos(3, 4)])
+            ])
         #expect(
             try Self.decode(#"{"type":"MultiLineString","coordinates":[[[1,2],[3,4]],[[5,6],[7,8]]]}"#)
-                == [.multiLineString([[p(1, 2), p(3, 4)], [p(5, 6), p(7, 8)]])])
-        let square = [p(0, 0), p(4, 0), p(4, 4), p(0, 4), p(0, 0)]
-        let hole = [p(1, 1), p(1, 2), p(2, 2), p(1, 1)]
+                == [.multiLineString([[pos(1, 2), pos(3, 4)], [pos(5, 6), pos(7, 8)]])])
+        let square = [pos(0, 0), pos(4, 0), pos(4, 4), pos(0, 4), pos(0, 0)]
+        let hole = [pos(1, 1), pos(1, 2), pos(2, 2), pos(1, 1)]
         #expect(
             try Self.decode(
                 #"{"type":"Polygon","coordinates":[[[0,0],[4,0],[4,4],[0,4],[0,0]],[[1,1],[1,2],[2,2],[1,1]]]}"#)
                 == [.polygon([square, hole])])
         #expect(
             try Self.decode(
-                #"{"type":"MultiPolygon","coordinates":[[[[0,0],[4,0],[4,4],[0,4],[0,0]]],[[[1,1],[1,2],[2,2],[1,1]]]]}"#)
+                #"{"type":"MultiPolygon","coordinates":[[[[0,0],[4,0],[4,4],[0,4],[0,0]]],"#
+                    + #"[[[1,1],[1,2],[2,2],[1,1]]]]}"#)
                 == [.multiPolygon([[square], [hole]])])
         #expect(
             try Self.decode(
                 #"{"type":"GeometryCollection","geometries":[{"type":"Point","coordinates":[1,2]},"#
-                    + #"{"type":"GeometryCollection","geometries":[{"type":"LineString","coordinates":[[1,2],[3,4]]}]}]}"#)
-                == [.collection([.point(p(1, 2)), .collection([.lineString([p(1, 2), p(3, 4)])])])])
+                    + #"{"type":"GeometryCollection","geometries":"#
+                    + #"[{"type":"LineString","coordinates":[[1,2],[3,4]]}]}]}"#)
+                == [.collection([.point(pos(1, 2)), .collection([.lineString([pos(1, 2), pos(3, 4)])])])])
     }
 
     @Test("a Feature and a FeatureCollection give their geometries; null geometries are skipped")
     func features() throws {
-        let p = Self.position
+        let pos = Self.position
         #expect(
             try Self.decode(#"{"type":"Feature","properties":{"a":1},"geometry":{"type":"Point","coordinates":[1,2]}}"#)
-                == [.point(p(1, 2))])
+                == [.point(pos(1, 2))])
         #expect(try Self.decode(#"{"type":"Feature","properties":null,"geometry":null}"#).isEmpty)
         let collection = """
             {"type":"FeatureCollection","features":[
@@ -55,13 +61,15 @@ struct GeoJSONTests {
               {"type":"Feature","geometry":{"type":"Point","coordinates":[3,4]},"foreign":[1,2]}
             ]}
             """
-        #expect(try Self.decode(collection) == [.point(p(1, 2)), .point(p(3, 4))])
+        #expect(try Self.decode(collection) == [.point(pos(1, 2)), .point(pos(3, 4))])
         #expect(try Self.decode(#"{"type":"FeatureCollection","features":[]}"#).isEmpty)
     }
 
     @Test("altitude and later position members are dropped")
     func altitude() throws {
-        #expect(try Self.decode(#"{"type":"Point","coordinates":[1.5,-2.25,100,7]}"#) == [.point(Self.position(1.5, -2.25))])
+        #expect(
+            try Self.decode(#"{"type":"Point","coordinates":[1.5,-2.25,100,7]}"#) == [.point(Self.position(1.5, -2.25))]
+        )
     }
 
     @Test(

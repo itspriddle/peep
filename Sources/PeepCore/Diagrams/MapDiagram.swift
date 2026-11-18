@@ -41,7 +41,8 @@ enum MapDiagram {
                 path.close()
             }
             if !path.isEmpty {
-                writer.empty(.path, [.class: .keyword("peep-map-area"), .fillRule: .keyword("evenodd"), .d: .path(path)])
+                writer.empty(
+                    .path, [.class: .keyword("peep-map-area"), .fillRule: .keyword("evenodd"), .pathData: .path(path)])
             }
         }
         var lines = SVGPath()
@@ -49,15 +50,14 @@ enum MapDiagram {
             trace(line, with: projection, into: &lines)
         }
         if !lines.isEmpty {
-            writer.empty(.path, [.class: .keyword("peep-map-line"), .d: .path(lines)])
+            writer.empty(.path, [.class: .keyword("peep-map-line"), .pathData: .path(lines)])
         }
         var points = SVGPath()
         for point in shapes.points {
-            let (x, y) = projection.project(point)
-            points.dot(x: x, y: y, radius: pointRadius)
+            points.dot(at: projection.project(point), radius: pointRadius)
         }
         if !points.isEmpty {
-            writer.empty(.path, [.class: .keyword("peep-map-point"), .d: .path(points)])
+            writer.empty(.path, [.class: .keyword("peep-map-point"), .pathData: .path(points)])
         }
         writer.end()
         return writer.result
@@ -65,11 +65,10 @@ enum MapDiagram {
 
     private static func trace(_ positions: [GeoPosition], with projection: MapProjection, into path: inout SVGPath) {
         for (index, position) in positions.enumerated() {
-            let (x, y) = projection.project(position)
             if index == 0 {
-                path.move(x: x, y: y)
+                path.move(to: projection.project(position))
             } else {
-                path.line(x: x, y: y)
+                path.line(to: projection.project(position))
             }
         }
     }

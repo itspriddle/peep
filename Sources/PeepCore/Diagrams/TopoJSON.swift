@@ -51,8 +51,9 @@ struct QuantizationTransform: Sendable {
         translate = try JSONValues.coordinatePair(object["translate"])
     }
 
-    func apply(_ x: Double, _ y: Double) -> GeoPosition {
-        GeoPosition(longitude: x * scale.0 + translate.0, latitude: y * scale.1 + translate.1)
+    func apply(_ quantized: (Double, Double)) -> GeoPosition {
+        GeoPosition(
+            longitude: quantized.0 * scale.0 + translate.0, latitude: quantized.1 * scale.1 + translate.1)
     }
 }
 
@@ -66,14 +67,13 @@ private struct Topology {
         var arcs: [[GeoPosition]] = []
         for arcValue in try JSONValues.array(value) {
             var arc: [GeoPosition] = []
-            var x = 0.0
-            var y = 0.0
+            var sum = (0.0, 0.0)
             for pointValue in try JSONValues.array(arcValue) {
                 let point = try JSONValues.coordinatePair(pointValue)
                 if let transform {
-                    x += point.0
-                    y += point.1
-                    arc.append(transform.apply(x, y))
+                    sum.0 += point.0
+                    sum.1 += point.1
+                    arc.append(transform.apply(sum))
                 } else {
                     arc.append(GeoPosition(longitude: point.0, latitude: point.1))
                 }
@@ -129,7 +129,7 @@ private struct Topology {
     private mutating func point(_ value: Any?) throws(DiagramDecodingError) -> GeoPosition {
         try charge(1)
         let pair = try JSONValues.coordinatePair(value)
-        return transform?.apply(pair.0, pair.1) ?? GeoPosition(longitude: pair.0, latitude: pair.1)
+        return transform?.apply(pair) ?? GeoPosition(longitude: pair.0, latitude: pair.1)
     }
 
     private mutating func lines(_ value: Any?) throws(DiagramDecodingError) -> [[GeoPosition]] {

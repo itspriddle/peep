@@ -4,53 +4,58 @@ import Testing
 
 @Suite("Map projection and SVG")
 struct MapProjectionTests {
-    static func p(_ longitude: Double, _ latitude: Double) -> GeoPosition {
+    static func pos(_ longitude: Double, _ latitude: Double) -> GeoPosition {
         GeoPosition(longitude: longitude, latitude: latitude)
     }
 
-    static func isClose(_ a: Double, _ b: Double) -> Bool {
-        abs(a - b) < 1e-6
+    static func isClose(_ lhs: Double, _ rhs: Double) -> Bool {
+        abs(lhs - rhs) < 1e-6
     }
 
     @Test("a wide shape fills the width inside the padding and is centered vertically")
     func fitsWidth() throws {
-        let projection = try #require(MapProjection(fitting: [Self.p(-10, -1), Self.p(10, 1)]))
-        let west = projection.project(Self.p(-10, -1))
-        let east = projection.project(Self.p(10, 1))
-        #expect(Self.isClose(west.x, MapProjection.padding))
-        #expect(Self.isClose(east.x, MapProjection.width - MapProjection.padding))
-        #expect(Self.isClose((west.y + east.y) / 2, MapProjection.height / 2))
+        let projection = try #require(MapProjection(fitting: [Self.pos(-10, -1), Self.pos(10, 1)]))
+        let west = projection.project(Self.pos(-10, -1))
+        let east = projection.project(Self.pos(10, 1))
+        #expect(Self.isClose(west.horizontal, MapProjection.padding))
+        #expect(Self.isClose(east.horizontal, MapProjection.width - MapProjection.padding))
+        #expect(Self.isClose((west.vertical + east.vertical) / 2, MapProjection.height / 2))
         // North is up.
-        #expect(east.y < west.y)
+        #expect(east.vertical < west.vertical)
     }
 
     @Test("a tall shape fills the height and is centered horizontally")
     func fitsHeight() throws {
-        let projection = try #require(MapProjection(fitting: [Self.p(0, -40), Self.p(1, 40)]))
-        let south = projection.project(Self.p(0, -40))
-        let north = projection.project(Self.p(1, 40))
-        #expect(Self.isClose(north.y, MapProjection.padding))
-        #expect(Self.isClose(south.y, MapProjection.height - MapProjection.padding))
-        #expect(Self.isClose((south.x + north.x) / 2, MapProjection.width / 2))
+        let projection = try #require(MapProjection(fitting: [Self.pos(0, -40), Self.pos(1, 40)]))
+        let south = projection.project(Self.pos(0, -40))
+        let north = projection.project(Self.pos(1, 40))
+        #expect(Self.isClose(north.vertical, MapProjection.padding))
+        #expect(Self.isClose(south.vertical, MapProjection.height - MapProjection.padding))
+        #expect(Self.isClose((south.horizontal + north.horizontal) / 2, MapProjection.width / 2))
     }
 
     @Test("Mercator keeps the aspect ratio: a degree of latitude near the equator is a degree of longitude")
     func aspect() throws {
-        let projection = try #require(MapProjection(fitting: [Self.p(0, 0), Self.p(1, 1)]))
-        let a = projection.project(Self.p(0, 0))
-        let b = projection.project(Self.p(1, 1))
-        #expect(abs((b.x - a.x) - (a.y - b.y)) / (b.x - a.x) < 0.001)
+        let projection = try #require(MapProjection(fitting: [Self.pos(0, 0), Self.pos(1, 1)]))
+        let origin = projection.project(Self.pos(0, 0))
+        let corner = projection.project(Self.pos(1, 1))
+        let width = corner.horizontal - origin.horizontal
+        #expect(abs(width - (origin.vertical - corner.vertical)) / width < 0.001)
     }
 
     @Test("latitudes past ±85.0511 are clamped; a single point is centered")
     func clampAndPoint() throws {
-        #expect(MapProjection.mercator(Self.p(0, 90)) == MapProjection.mercator(Self.p(0, MapProjection.maximumLatitude)))
-        #expect(MapProjection.mercator(Self.p(0, -90)) == MapProjection.mercator(Self.p(0, -MapProjection.maximumLatitude)))
-        #expect(Self.isClose(MapProjection.mercator(Self.p(0, MapProjection.maximumLatitude)).y, 0))
-        let projection = try #require(MapProjection(fitting: [Self.p(12.5, 41.9)]))
-        let point = projection.project(Self.p(12.5, 41.9))
-        #expect(Self.isClose(point.x, MapProjection.width / 2))
-        #expect(Self.isClose(point.y, MapProjection.height / 2))
+        #expect(
+            MapProjection.mercator(Self.pos(0, 90))
+                == MapProjection.mercator(Self.pos(0, MapProjection.maximumLatitude)))
+        #expect(
+            MapProjection.mercator(Self.pos(0, -90))
+                == MapProjection.mercator(Self.pos(0, -MapProjection.maximumLatitude)))
+        #expect(Self.isClose(MapProjection.mercator(Self.pos(0, MapProjection.maximumLatitude)).vertical, 0))
+        let projection = try #require(MapProjection(fitting: [Self.pos(12.5, 41.9)]))
+        let point = projection.project(Self.pos(12.5, 41.9))
+        #expect(Self.isClose(point.horizontal, MapProjection.width / 2))
+        #expect(Self.isClose(point.vertical, MapProjection.height / 2))
         #expect(MapProjection(fitting: [GeoPosition]()) == nil)
     }
 
@@ -70,19 +75,19 @@ struct MapProjectionTests {
     @Test("paths drop points that round to the one before; a non-finite point voids the SVG")
     func paths() {
         var path = SVGPath()
-        path.move(x: 1, y: 1)
-        path.line(x: 1.01, y: 1.02)
-        path.line(x: 2, y: 3)
+        path.move(to: SVGPoint(horizontal: 1, vertical: 1))
+        path.line(to: SVGPoint(horizontal: 1.01, vertical: 1.02))
+        path.line(to: SVGPoint(horizontal: 2, vertical: 3))
         path.close()
         #expect(path.data == "M1 1L2 3Z")
         var writer = SVGWriter()
-        writer.empty(.path, [.d: .path(path)])
+        writer.empty(.path, [.pathData: .path(path)])
         #expect(writer.result == "<path d=\"M1 1L2 3Z\"/>")
 
         var bad = SVGPath()
-        bad.move(x: .nan, y: 0)
+        bad.move(to: SVGPoint(horizontal: .nan, vertical: 0))
         var badWriter = SVGWriter()
-        badWriter.empty(.path, [.d: .path(bad)])
+        badWriter.empty(.path, [.pathData: .path(bad)])
         #expect(badWriter.result == nil)
         var badNumbers = SVGWriter()
         badNumbers.empty(.svg, [.viewBox: .numbers([0, .infinity])])
@@ -103,9 +108,9 @@ struct MapProjectionTests {
         let svg = try #require(
             MapDiagram.svg(
                 for: [
-                    .polygon([[Self.p(0, 0), Self.p(4, 0), Self.p(4, 4), Self.p(0, 0)]]),
-                    .lineString([Self.p(0, 0), Self.p(4, 4)]),
-                    .point(Self.p(2, 2)),
+                    .polygon([[Self.pos(0, 0), Self.pos(4, 0), Self.pos(4, 4), Self.pos(0, 0)]]),
+                    .lineString([Self.pos(0, 0), Self.pos(4, 4)]),
+                    .point(Self.pos(2, 2)),
                 ],
                 label: "GeoJSON map"))
         #expect(svg.hasPrefix(#"<svg class="peep-map" viewBox="0 0 800 400" role="img" aria-label="GeoJSON map">"#))

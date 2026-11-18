@@ -68,7 +68,6 @@ struct SVGWriter {
 /// The SVG elements `SVGWriter` writes.
 enum SVGElement: String, Sendable {
     case svg
-    case g
     case path
 }
 
@@ -78,9 +77,8 @@ enum SVGAttribute: String, Sendable {
     case viewBox
     case role
     case ariaLabel = "aria-label"
-    case preserveAspectRatio
     case fillRule = "fill-rule"
-    case d
+    case pathData = "d"
 }
 
 /// An attribute value.
@@ -95,6 +93,12 @@ enum SVGValue: Sendable {
     case path(SVGPath)
 }
 
+/// A point in a drawing's viewBox units: `horizontal` grows rightward, `vertical` downward.
+struct SVGPoint: Sendable, Equatable {
+    var horizontal: Double
+    var vertical: Double
+}
+
 /// Path data (`d`), made only of commands and `SVGNumber`s. Points are rounded to a tenth of a
 /// unit, and a point that rounds to the one before it is dropped, so dense input doesn't make
 /// longer output than the drawing can show.
@@ -102,67 +106,75 @@ struct SVGPath: Sendable {
     private(set) var data = ""
     /// `false` once a non-finite number was given; `SVGWriter` then writes nothing.
     private(set) var isValid = true
-    private var last: (x: String, y: String)?
+    /// The current point as written, while a subpath is open.
+    private var current: FormattedPoint?
 
     var isEmpty: Bool {
         data.isEmpty
     }
 
-    /// Starts a subpath at (`x`, `y`).
-    mutating func move(x: Double, y: Double) {
-        guard let point = formatted(x, y) else {
+    /// Starts a subpath at `point`.
+    mutating func move(to point: SVGPoint) {
+        guard let formatted = format(point) else {
             return
         }
-        append("M\(point.x) \(point.y)")
-        last = point
+        data += "M\(formatted)"
+        current = formatted
     }
 
-    /// A line from the current point to (`x`, `y`); skipped when it rounds to the same point.
-    mutating func line(x: Double, y: Double) {
-        guard let point = formatted(x, y) else {
+    /// A line from the current point to `point` (a move without one); skipped when it rounds to
+    /// the current point.
+    mutating func line(to point: SVGPoint) {
+        guard let current else {
+            move(to: point)
             return
         }
-        guard let last else {
-            move(x: x, y: y)
+        guard let formatted = format(point), formatted != current else {
             return
         }
-        guard point != last else {
-            return
-        }
-        append("L\(point.x) \(point.y)")
-        self.last = point
+        data += "L\(formatted)"
+        self.current = formatted
     }
 
     /// Closes the current subpath.
     mutating func close() {
-        guard last != nil else {
+        guard current != nil else {
             return
         }
         data += "Z"
+        current = nil
     }
 
-    /// A filled circle of `radius` at (`x`, `y`), as two arcs (one path can hold many).
-    mutating func dot(x: Double, y: Double, radius: Double) {
-        guard let left = SVGNumber.format(x - radius), let center = SVGNumber.format(y),
+    /// A filled circle of `radius` around `center`, as two arcs (one path can hold many).
+    mutating func dot(at center: SVGPoint, radius: Double) {
+        guard
+            let start = format(SVGPoint(horizontal: center.horizontal - radius, vertical: center.vertical)),
             let size = SVGNumber.format(radius), let diameter = SVGNumber.format(radius * 2)
         else {
             isValid = false
             return
         }
-        append("M\(left) \(center)a\(size) \(size) 0 1 0 \(diameter) 0a\(size) \(size) 0 1 0 -\(diameter) 0Z")
-        last = nil
+        data += "M\(start)a\(size) \(size) 0 1 0 \(diameter) 0a\(size) \(size) 0 1 0 -\(diameter) 0Z"
+        current = nil
     }
 
-    private mutating func append(_ command: String) {
-        data += command
-    }
-
-    private mutating func formatted(_ x: Double, _ y: Double) -> (x: String, y: String)? {
-        guard let x = SVGNumber.format(x), let y = SVGNumber.format(y) else {
+    private mutating func format(_ point: SVGPoint) -> FormattedPoint? {
+        guard let horizontal = SVGNumber.format(point.horizontal), let vertical = SVGNumber.format(point.vertical)
+        else {
             isValid = false
             return nil
         }
-        return (x, y)
+        return FormattedPoint(horizontal: horizontal, vertical: vertical)
+    }
+}
+
+/// A point as `SVGNumber`s, written `h v`.
+private struct FormattedPoint: Sendable, Equatable, CustomStringConvertible {
+    var horizontal: String
+    var vertical: String
+
+    var description: String {
+        "\(horizontal) \(vertical)"
     }
 }
 

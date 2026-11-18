@@ -32,11 +32,11 @@ struct MapProjection: Sendable, Equatable {
         var maximumX = -Double.infinity
         var maximumY = -Double.infinity
         for position in positions {
-            let (x, y) = Self.mercator(position)
-            minimumX = min(minimumX, x)
-            minimumY = min(minimumY, y)
-            maximumX = max(maximumX, x)
-            maximumY = max(maximumY, y)
+            let point = Self.mercator(position)
+            minimumX = min(minimumX, point.horizontal)
+            minimumY = min(minimumY, point.vertical)
+            maximumX = max(maximumX, point.horizontal)
+            maximumY = max(maximumY, point.vertical)
         }
         guard minimumX <= maximumX, minimumY <= maximumY else {
             return nil
@@ -54,18 +54,19 @@ struct MapProjection: Sendable, Equatable {
         originY = Self.padding + (availableHeight - spanY * scale) / 2
     }
 
-    /// `position` in viewBox units (y grows downward).
-    func project(_ position: GeoPosition) -> (x: Double, y: Double) {
-        let (x, y) = Self.mercator(position)
-        return (originX + (x - minimumX) * scale, originY + (y - minimumY) * scale)
+    /// `position` in viewBox units.
+    func project(_ position: GeoPosition) -> SVGPoint {
+        let point = Self.mercator(position)
+        return SVGPoint(
+            horizontal: originX + (point.horizontal - minimumX) * scale,
+            vertical: originY + (point.vertical - minimumY) * scale)
     }
 
-    /// Web Mercator in the unit square: x from 0 (180°W) to 1 (180°E), y from 0 (north) to 1
-    /// (south), for latitudes within ±`maximumLatitude`.
-    static func mercator(_ position: GeoPosition) -> (x: Double, y: Double) {
+    /// Web Mercator in the unit square: horizontally from 0 (180°W) to 1 (180°E), vertically
+    /// from 0 (north) to 1 (south), for latitudes within ±`maximumLatitude`.
+    static func mercator(_ position: GeoPosition) -> SVGPoint {
         let latitude = min(max(position.latitude, -maximumLatitude), maximumLatitude) * .pi / 180
-        let x = (position.longitude + 180) / 360
-        let y = (1 - log(tan(.pi / 4 + latitude / 2)) / .pi) / 2
-        return (x, y)
+        return SVGPoint(
+            horizontal: (position.longitude + 180) / 360, vertical: (1 - log(tan(.pi / 4 + latitude / 2)) / .pi) / 2)
     }
 }
