@@ -9,6 +9,8 @@ UI_RESULT   := build/AppUITests.xcresult
 HLJS_VERSION ?= 11.12.0
 # sindresorhus/github-markdown-css release the GitHub theme is generated from.
 GHCSS_VERSION ?= 5.9.0
+# mermaid release the viewer's diagrams use (#117), vendored into Vendor/mermaid.
+MERMAID_VERSION ?= 12.3.0
 XCODEBUILD_BASE := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -destination '$(DESTINATION)' -derivedDataPath $(DERIVED)
 XCODEBUILD  := $(XCODEBUILD_BASE)
 # github/gemoji commit the emoji table is generated from (`make emoji`).
@@ -38,7 +40,7 @@ endif
 
 .NOTPARALLEL:
 
-.PHONY: help bootstrap generate build test test-core test-app test-ui cli-docs record-theme-snapshots lint format emoji html-entities release app-icon vendor-highlightjs vendor-github-markdown-css clean
+.PHONY: help bootstrap generate build test test-core test-app test-ui cli-docs record-theme-snapshots lint format emoji html-entities release app-icon vendor-highlightjs vendor-github-markdown-css vendor-mermaid clean
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-12s %s\n", $$1, $$2}'
@@ -100,6 +102,9 @@ vendor-highlightjs: ## Vendor highlight.js (HLJS_VERSION=x.y.z) as generated Swi
 
 vendor-github-markdown-css: ## Vendor github-markdown-css (GHCSS_VERSION=x.y.z) as generated Swift
 	scripts/vendor-github-markdown-css.sh $(GHCSS_VERSION)
+
+vendor-mermaid: ## Vendor mermaid (MERMAID_VERSION=x.y.z) into Vendor/mermaid (needs npm)
+	scripts/vendor-mermaid.sh $(MERMAID_VERSION)
 
 clean: ## Remove build artifacts
 	rm -rf .build build $(PROJECT)
