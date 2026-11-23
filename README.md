@@ -8,6 +8,9 @@ echo '# Markdown' | peep
 peep --html README.md > README.html
 ```
 
+- `hsl(212, 92%, 45%)`
+- `#0969DA`
+
 > **Status:** early development. Website: [peep.now](https://peep.now). See
 > [docs/VISION.md](docs/VISION.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -84,7 +87,7 @@ peep:
 ## Custom preprocessor
 
 Peep can run a program of your choice on every document before rendering it, for formats or
-conventions it doesn't know. It is off by default. Turn it on in Settings > Markdown > Custom
+conventions it doesn't know. It is off by default. Turn it on in Settings > Programs > Custom
 preprocessor: choose the program with Choose... and add any arguments, one per field.
 
 - The program gets the document on standard input and writes Markdown to standard output; exit
@@ -110,7 +113,7 @@ preprocessor: choose the program with Choose... and add any arguments, one per f
 
 Peep can also hand rendering to another Markdown renderer, such as pandoc, markdown-it, or
 comrak, and show its HTML in the Peep window, with your theme, the outline, and live reload. It
-is off by default. Turn it on in Settings > Markdown > Custom processor, the same way as the
+is off by default. Turn it on in Settings > Programs > Custom processor, the same way as the
 preprocessor.
 
 - The program gets the Markdown after the frontmatter on standard input and writes HTML (a
@@ -178,7 +181,9 @@ peep --html --no-diagrams map.md > map.html     # geojson, topojson, and stl blo
   that don't load are reported on standard error).
 - Rendering flags: `--frontmatter table` shows frontmatter before the body (hidden by default);
   `--wiki-links` / `--no-wiki-links` turn `[[wiki links]]` on or off, beating the document's
-  `peep.wikilinks`; `--source-lines` adds `data-source-line` attributes; `--no-highlight`,
+  `peep.wikilinks`; `--color-swatches` shows a swatch after inline code that is a color
+  (`` `#0969DA` ``, `` `rgb(9, 105, 218)` ``, `` `hsl(212, 92%, 45%)` ``), as GitHub does in
+  comments; `--source-lines` adds `data-source-line` attributes; `--no-highlight`,
   `--no-diagrams` (maps and models), and `--no-heading-anchors` turn those off; `--block-remote-images` replaces remote images with a
   placeholder (they're kept by default, as on GitHub). Raw HTML is always sanitized; there is no
   flag to turn that off. The CLI ignores the app's Settings: output depends only on the flags

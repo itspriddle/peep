@@ -3,7 +3,7 @@ import XCTest
 /// The custom preprocessor (#57), configured with the Debug-only `-PeepUITestPreprocessor` hook
 /// so tests never depend on the reader's settings: its output renders, a failing script shows
 /// the bar (with stderr behind Show Details) instead of an alert, and turning it back on in
-/// Settings > Markdown needs the warning.
+/// Settings > Programs needs the warning.
 @MainActor
 final class CustomPreprocessorUITests: XCTestCase {
     private var peep: PeepUITestApp?
@@ -57,7 +57,7 @@ final class CustomPreprocessorUITests: XCTestCase {
         peep.waitForRenderedText("PROCESSED BY THE SCRIPT.", in: window)
 
         let settings = peep.openSettings()
-        peep.showSettingsPane("Markdown")
+        peep.showSettingsPane("Programs")
         let toggle = settings.checkBoxes["settings-custom-preprocessor"]
         XCTAssertTrue(toggle.waitForExistence(timeout: PeepUITestApp.defaultTimeout), "toggle")
         XCTAssertEqual(toggle.value as? Int, 1)

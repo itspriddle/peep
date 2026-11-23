@@ -928,7 +928,7 @@ editor or a browser.
 - Custom preprocessor scripts run only when the user configures them (#57), and they are the
   first stage of the render pipeline (#51), so their output is still parsed, transformed, and
   sanitized like any file.
-  - **Opt-in (#57):** off by default. Settings > Markdown > Custom preprocessor is the only
+  - **Opt-in (#57):** off by default. Settings > Programs > Custom preprocessor is the only
     way to turn it on (`CustomProgramSettings.preprocessor`): the program is chosen with an Open panel
     (never a typed path; links are kept as chosen, not resolved) and stored as an absolute path,
     a choice that isn't an executable file is refused with the reason, and the toggle turns it
@@ -1012,7 +1012,7 @@ editor or a browser.
     grace period. Opting in means trusting the executable.
 - **The custom processor (#106)** is opted into and runs exactly like the preprocessor: the
   same runner, contract, environment, working directory, limits, and failure handling, with
-  its own store (`CustomProgramSettings.processor`, Settings > Markdown > Custom processor,
+  its own store (`CustomProgramSettings.processor`, Settings > Programs > Custom processor,
   its own warning; `-PeepUITestProcessor` in Debug UI tests only). The two are independent.
   What differs: its input is the body after the frontmatter, and its output is HTML, which is
   untrusted like a document's raw HTML: it is always sanitized

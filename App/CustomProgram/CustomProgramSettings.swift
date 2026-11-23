@@ -4,7 +4,7 @@ import PeepCore
 /// The custom preprocessor (#57) or processor (#106) a render runs: the executable and its
 /// arguments as Settings stores them, before validation. Part of `MarkdownPreferences`, so
 /// turning one on or off, or changing its executable or arguments, re-renders open documents
-/// like any other Settings > Markdown change.
+/// like a Settings > Markdown change.
 ///
 /// It is validated when a render builds its `PreprocessorConfiguration`, and the runner checks
 /// the executable again just before it starts; an executable that went away is a failure the
@@ -25,7 +25,7 @@ struct CustomProgramRun: Equatable, Sendable {
     var error: PreprocessorError?
 }
 
-/// The reader's custom preprocessor (#57) or processor (#106) (Settings > Markdown), persisted
+/// The reader's custom preprocessor (#57) or processor (#106) (Settings > Programs), persisted
 /// in `UserDefaults` under `kind`'s keys: whether it is on, the executable, and its arguments.
 /// One instance per kind (`preprocessor`, `processor`); the two are independent.
 ///

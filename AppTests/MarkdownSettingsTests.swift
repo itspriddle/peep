@@ -101,9 +101,9 @@ final class MarkdownSettingsTests: DocumentWindowTestCase {
         #expect(store.builtInPreprocessors == [.wikiLinks])
     }
 
-    @Test("wiki links are the one built-in preprocessor offered; turning them on persists")
+    @Test("wiki links and color swatches are the built-in preprocessors offered; turning one on persists")
     func wikiLinksPersist() {
-        #expect(MarkdownSettings.optionalPreprocessors == [.wikiLinks])
+        #expect(MarkdownSettings.optionalPreprocessors == [.wikiLinks, .colorSwatches])
         let store = store()
         store.builtInPreprocessors = [.wikiLinks, .alerts]
         #expect(store.builtInPreprocessors == [.wikiLinks])
@@ -112,6 +112,17 @@ final class MarkdownSettingsTests: DocumentWindowTestCase {
         #expect(DocumentContent.renderOptions(preferences: store.preferences).builtInPreprocessors == [.wikiLinks])
         store.builtInPreprocessors = []
         #expect(defaults.object(forKey: MarkdownSettings.preprocessorsKey) == nil)
+    }
+
+    @Test("color swatches are off by default; turning them on persists")
+    func colorSwatchesPersist() {
+        let store = store()
+        #expect(!store.builtInPreprocessors.contains(.colorSwatches))
+        store.builtInPreprocessors = [.colorSwatches]
+        #expect(defaults.stringArray(forKey: MarkdownSettings.preprocessorsKey) == ["colorSwatches"])
+        #expect(self.store().preferences.builtInPreprocessors == [.colorSwatches])
+        #expect(
+            DocumentContent.renderOptions(preferences: store.preferences).builtInPreprocessors == [.colorSwatches])
     }
 
     @Test("diagrams are on by default; turning them off persists, and only off is stored")

@@ -7,7 +7,9 @@ import SwiftUI
 /// lifecycle is AppKit, so there is no SwiftUI `Settings` scene: an `NSTabViewController` in
 /// toolbar style holds one pane per tab, each a SwiftUI form in an `NSHostingController`. A new
 /// pane is one more `pane(...)` in `init`. The window remembers its position
-/// (`frameAutosaveName`, not under UI tests) and isn't restored at launch.
+/// (`frameAutosaveName`, not under UI tests) and isn't restored at launch. Switching to a
+/// taller pane grows the window down from its top edge; `keepOnScreen()` then moves it up as
+/// far as needed to keep the pane's last rows above the Dock.
 @MainActor
 final class SettingsWindowController: NSWindowController, NSWindowDelegate {
     /// The window's accessibility identifier, for UI tests.
@@ -24,6 +26,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
             Self.pane("General", symbol: "gearshape", identifier: "general", GeneralSettingsView(model: model)))
         tabs.addTabViewItem(
             Self.pane("Markdown", symbol: "doc.text", identifier: "markdown", MarkdownSettingsView(model: model)))
+        tabs.addTabViewItem(
+            Self.pane("Programs", symbol: "terminal", identifier: "programs", ProgramsSettingsView(model: model)))
         tabs.addTabViewItem(
             Self.pane("Reading", symbol: "book", identifier: "reading", ReadingSettingsView(model: model)))
         tabs.addTabViewItem(
@@ -72,7 +76,24 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         window?.makeKeyAndOrderFront(nil)
     }
 
+    /// Moves the window up when its bottom is below the screen's visible frame (under the Dock
+    /// or off the screen), never past the visible frame's top.
+    func keepOnScreen() {
+        guard let window, let visible = (window.screen ?? NSScreen.main)?.visibleFrame,
+            window.frame.minY < visible.minY
+        else {
+            return
+        }
+        let origin = NSPoint(x: window.frame.minX, y: min(visible.minY, visible.maxY - window.frame.height))
+        window.setFrameOrigin(origin)
+    }
+
     // MARK: NSWindowDelegate
+
+    /// A pane change resizes the window from its top edge.
+    func windowDidResize(_ notification: Notification) {
+        keepOnScreen()
+    }
 
     /// The outline preference and the default viewer post no change notifications; read them
     /// again whenever the reader comes back to the window.

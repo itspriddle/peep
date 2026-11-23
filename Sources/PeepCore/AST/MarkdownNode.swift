@@ -79,6 +79,9 @@ extension MarkdownNode {
         /// A wiki link (`[[Page]]`, `[[Page#Heading|label]]`), made from text by `WikiLinks` (#53).
         /// Children are the label (text); `WikiLink.destination` is `nil` for a missing page.
         case wikiLink(WikiLink)
+        /// A code span whose whole literal is a color, marked by `ColorSwatches`. Rendered like
+        /// `code`, with a swatch of `color` after the literal.
+        case colorCode(literal: String, color: SwatchColor)
     }
 }
 

@@ -79,7 +79,7 @@ struct HeadingText {
         var stack = heading.children.reversed() as [MarkdownNode]
         while let node = stack.popLast() {
             switch node.kind {
-            case .text(let literal), .code(let literal):
+            case .text(let literal), .code(let literal), .colorCode(let literal, _):
                 display += literal
                 slugSource += literal
             case .emoji(let shortcode, let character):

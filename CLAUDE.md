@@ -62,12 +62,17 @@ lock the build database.
     `RenderOptions.applying(_:)` is the one place it changes a render (the flavor and the
     `.wikiLinks` built-in preprocessor only): never route a safety setting through it.
   - `Transforms/`: AST passes. `MarkdownTransform` (enum; declaration order is run order:
-    alerts, wiki links, emoji) names each pass; its implementation conforms to
+    alerts, wiki links, color swatches, emoji) names each pass; its implementation conforms to
     `MarkdownTreeTransform`. Enabled by `Flavor.transforms` or
     `RenderOptions.builtInPreprocessors`. Emoji shortcodes and GitHub alerts (`GitHubAlerts`,
     top-level `> [!NOTE]` quotes to `MarkdownNode.Kind.alert`; markup and Octicons in
     `Rendering/HTMLRenderer+Alerts.swift`) live here, and so do wiki links (`WikiLinks`, #53:
     `[[Page]]` text to `MarkdownNode.Kind.wikiLink`; markup in `HTMLRenderer+WikiLinks.swift`).
+  - `ColorSwatches/`: `SwatchColor` (GitHub's color code forms, checked with `gh api markdown`:
+    `#RRGGBB`, `rgb()`/`rgba()`, `hsl()`; kept as bytes, written only as `hex`) and the
+    `ColorSwatches` transform (`MarkdownTransform.colorSwatches`, an opt-in built-in
+    preprocessor; the one pass that reads `code`: a whole-literal color becomes
+    `MarkdownNode.Kind.colorCode`, rendered as the code plus `span.peep-color-swatch`).
   - `WikiLinks/`: wiki link pages and resolution (#53). `WikiPage` (the naming rule),
     `WikiLinkResolver` (injected into `HTMLRenderer.wikiLinkResolver`; the search rules never
     read the disk), `FolderWikiLinkResolver` (document folder, then allowed root, entry cap, over
@@ -172,11 +177,14 @@ lock the build database.
     `init(defaults:isPersistent:)`, a property and `set…` method on the model, and a row.
     `MarkdownSettingsView` (#55) is Settings > Markdown: default flavor, frontmatter display,
     Render diagrams (M7, `MarkdownSettings.rendersDiagrams`, published to Quick Look),
-    built-in preprocessors (one row per `MarkdownSettings.optionalPreprocessors` entry), then
-    the custom preprocessor (#57) and processor (#106) sections. `ReadingSettingsView` is
-    Settings > Reading: how open documents behave (change highlights). General has no room to
-    grow: CI's screen puts its last rows under the Dock (`UpdatesUITests`), so new settings go
-    in another pane.
+    built-in preprocessors (one row per `MarkdownSettings.optionalPreprocessors` entry).
+    `ProgramsSettingsView` is Settings > Programs: the custom preprocessor (#57) and processor
+    (#106) sections. `ReadingSettingsView` is Settings > Reading: how open documents behave
+    (change highlights). Every pane must stay shorter than CI's visible screen (Settings >
+    Markdown with the custom programs, 900 points, wasn't): rows below it are under the Dock,
+    where UI tests can't click them. General and Markdown have no room to grow, so new
+    settings go in another pane. A taller pane grows the window down from its top;
+    `keepOnScreen()` moves it back above the Dock.
   - `QuickLook/`: `QuickLookConfigurationPublisher` writes `QuickLookConfiguration` to the App
     Group's defaults on launch and on each `ThemeSettings` / `MarkdownSettings` change (custom
     theme files included); off under tests and without a team (`PEEP_APP_GROUP` in
@@ -201,9 +209,10 @@ lock the build database.
     `preprocessorError` / `processorError`), and `CustomProgramFailureBar` (both bars share
     one `safeAreaInset` in `DocumentView`: another inset kept closed windows' documents alive).
     The settings reach renders as `MarkdownPreferences.customPreprocessor` / `customProcessor`
-    (`MarkdownDocument.renderPreferences`), so a change re-renders open documents like any
+    (`MarkdownDocument.renderPreferences`), so a change re-renders open documents like a
     Settings > Markdown change. `DocumentContent.processedHTML` is the processor's raw output;
-    pages and Copy as HTML sanitize it. The section view is `Settings/CustomProgramSection`.
+    pages and Copy as HTML sanitize it. The section view is `Settings/CustomProgramSection`, in
+    Settings > Programs (`Settings/ProgramsSettingsView`).
   - `CommandLineTool/` (#70): App menu > Install / Repair / Uninstall Command Line Tool….
     `CommandLineToolInstaller` (the rules over an injected folder and app: state, atomic
     install, uninstall, and the constant privileged shell scripts; an `Item` per linked file,

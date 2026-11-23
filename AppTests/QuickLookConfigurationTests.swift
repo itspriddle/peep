@@ -69,10 +69,10 @@ final class QuickLookConfigurationTests {
 
         markdown.defaultFlavorID = "commonmark"
         markdown.frontmatterDisplay = .table
-        markdown.builtInPreprocessors = [.wikiLinks]
+        markdown.builtInPreprocessors = [.wikiLinks, .colorSwatches]
         #expect(published().flavor == .commonmark)
         #expect(published().frontmatter == .table)
-        #expect(published().preprocessors == [.wikiLinks])
+        #expect(published().preprocessors == [.wikiLinks, .colorSwatches])
         #expect(published().rendersDiagrams)
         markdown.rendersDiagrams = false
         #expect(!published().rendersDiagrams)
