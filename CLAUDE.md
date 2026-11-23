@@ -235,6 +235,13 @@ lock the build database.
     the article, fading once seen, off-screen counts posted to the `changeMarks` handler). The
     status bar's `ChangesItem` shows those counts and scrolls to the next change. The
     `data-peep-change` rules are in `ThemeBase`.
+  - `RaiseOnChange/`: `RaiseOnChangeSettings` (Settings > Reading's "Bring the window to the
+    front when a file is saved", off by default; `-PeepUITestRaiseOnChange YES` under UI tests).
+    `LiveReloader` passes `MarkdownDocument.setContent(_:changes:textChanged:)` whether the text
+    changed; while the setting is on, that sets `raiseTarget` (the document's window nearest the
+    front; any other `setContent` clears it), and that window's display task calls
+    `bringForwardAfterReload()` (`DocumentWindowController+RaiseOnChange.swift`: unminimize,
+    make key, `NSApp.activate()`) after marking changes.
   - `Updates/` (#81): Sparkle 2 (app target only). `SoftwareUpdating` (what the menu and
     Settings use; fakes in tests), `SparkleUpdater` (`SPUStandardUpdaterController`, started from
     `AppDelegate.applicationDidFinishLaunching`; channels), `InactiveUpdater` (in memory, never
@@ -458,7 +465,8 @@ lock the build database.
   plist array, `launch(openingFixtures:)`) opens documents at launch; `-PeepUITestThemesFolder
   <abs path>` reads custom themes from a temp folder (UI tests without it load none, and hosted
   unit tests never load them); `-PeepUITestPreprocessor <abs path>` starts with that custom
-  preprocessor on; `-PeepUITestRenderDelay <seconds>` holds up every render (to see the
+  preprocessor on; `-PeepUITestRaiseOnChange YES` starts with raising windows on save on;
+  `-PeepUITestRenderDelay <seconds>` holds up every render (to see the
   slow-render indicator without a slow script); `-PeepUITestCommandLineToolFolder <abs path>`
   is the only folder Install Command Line Tool… offers (none without it). UI tests that run the
   CLI (`PeepUITestApp+CommandLine`, `+Wait`) use the built app's helper; the runner is
