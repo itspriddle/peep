@@ -78,7 +78,8 @@ final class QuickLookConfigurationPublisher {
             customTheme: customTheme(id: theme.id),
             flavorID: preferences.flavor.id,
             frontmatterDisplay: preferences.frontmatterDisplay,
-            builtInPreprocessors: preferences.builtInPreprocessors)
+            builtInPreprocessors: preferences.builtInPreprocessors,
+            rendersDiagrams: preferences.rendersDiagrams)
     }
 
     /// Writes `configuration` when it differs from what is stored.

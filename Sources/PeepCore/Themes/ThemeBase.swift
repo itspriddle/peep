@@ -16,7 +16,11 @@
 ///   staying hidden (the chevron's look is a default);
 /// - change marks (`[data-peep-changes]`, the app's `ChangeMarks.js`) staying out of the way:
 ///   positioned over the page, never hit, never printed (their color and fade are defaults);
-
+/// - a drawn mermaid block's code (`pre[data-peep-diagram="rendered"]`, the app's
+///   `MermaidDiagrams.js`) staying hidden behind its diagram (the error note's look is a default);
+/// - diagram zoom controls (`[data-peep-diagram-controls]`, the app's `DiagramControls.js`) and
+///   zoom never printed (the controls' look is a default);
+/// - diagrams' look (`.peep-diagram`, the map and STL classes; M7) is a default;
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
 /// - structural print rules (#26, #38): light color scheme, no page background, full width,
 ///   nothing clipped, no anchor icons, sensible page breaks. External link targets written out
@@ -51,6 +55,57 @@ public enum ThemeBase {
         .markdown-alert > :last-child { margin-bottom: 0; }
         .markdown-alert-title { display: flex; align-items: center; font-weight: 600; line-height: 1.25; }
         .markdown-alert-title svg { flex: none; margin-right: 0.5em; fill: currentColor; }
+        /* Diagrams (M7): maps and STL models the renderer draws (`MapDiagram`, `STLDiagram`: a
+           `figure.peep-diagram` around an inline SVG). Paths have classes, never colors: they take
+           the text color, so every theme works light, dark, and print. Themes may restyle all of it. */
+        .peep-diagram {
+          position: relative; box-sizing: border-box; margin: 0 0 16px; padding: 24px 16px;
+          border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 6px;
+        }
+        .peep-diagram > svg, .peep-diagram-viewport > svg {
+          display: block; box-sizing: border-box; max-width: 100%; height: auto; margin: 0 auto;
+        }
+        /* Maps and models fill the column; mermaid keeps its own inline max-width (its natural
+           size, never scaled up). */
+        .peep-diagram svg:is(.peep-map, .peep-stl) { width: 100%; }
+        /* Zoom and pan (the app's DiagramControls.js): the SVG is scaled and moved inside a
+           viewport that keeps its unzoomed size, so zooming never moves the page. The controls
+           show while the figure is hovered or focused. Never set by documents (the sanitizer
+           drops `data-` attributes); never printed. */
+        .peep-diagram-viewport { overflow: hidden; }
+        .peep-diagram-viewport > svg { transform-origin: 0 0; }
+        .peep-diagram-viewport[data-peep-zoomed] { cursor: grab; }
+        .peep-diagram-viewport[data-peep-dragging] { cursor: grabbing; }
+        [data-peep-diagram-controls] {
+          position: absolute; inset: 8px 8px auto auto; display: flex; flex-direction: column;
+          align-items: flex-end; gap: 6px; opacity: 0; transition: opacity 120ms ease-out;
+        }
+        .peep-diagram:is(:hover, :focus-within) > [data-peep-diagram-controls] { opacity: 1; }
+        .peep-diagram-pad { display: grid; grid-template-columns: repeat(3, 28px); gap: 4px; }
+        [data-peep-diagram-controls] button {
+          display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+          width: 28px; height: 28px; margin: 0; padding: 0; border-radius: 6px; font: inherit;
+          color: inherit; cursor: pointer;
+          border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+          background: color-mix(in srgb, Canvas 85%, currentColor 15%);
+        }
+        [data-peep-diagram-controls] button:hover { background: color-mix(in srgb, Canvas 75%, currentColor 25%); }
+        [data-peep-diagram-controls] svg { width: 16px; height: 16px; fill: currentColor; }
+        @media (prefers-reduced-motion: reduce) { [data-peep-diagram-controls] { transition: none; } }
+        .peep-map-area {
+          fill: currentColor; fill-opacity: 0.15; stroke: currentColor; stroke-width: 1.5;
+          stroke-linejoin: round; vector-effect: non-scaling-stroke;
+        }
+        .peep-map-line {
+          fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+          vector-effect: non-scaling-stroke;
+        }
+        .peep-map-point { fill: currentColor; fill-opacity: 0.8; stroke: none; }
+        /* STL shades, darkest (s0) to lit (s7): opaque, at a fixed lightness in the text color's
+           hue, so a model reads the same on a light or dark page and on paper (gray where relative
+           colors aren't supported). The stroke hides seams between facets. */
+        .peep-stl path { stroke-width: 0.75; stroke-linejoin: round; }
+        \(stlShadeRules)
         /* Wiki links (#53) to a missing page have no href, so themes style them as plain text
            (`a:not([href])`); a dashed underline keeps them distinguishable. */
         .wikilink-missing { border-bottom: 1px dashed; cursor: default; }
@@ -59,6 +114,10 @@ public enum ThemeBase {
            or focus, and always while collapsed. Never set by documents (the sanitizer drops
            `data-` attributes). */
         [data-peep-folded] { display: none !important; }
+        /* Mermaid diagrams (#117, the app's MermaidDiagrams.js): a drawn block's code stays in the
+           page, hidden, after its figure; one mermaid couldn't draw shows a note after it. */
+        pre[data-peep-diagram="rendered"] { display: none !important; }
+        .peep-diagram-error { margin-top: -0.5em; font-size: 0.85em; opacity: 0.75; }
         [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6) { cursor: pointer; }
         [data-peep-sections] .markdown-body > :is(h1, h2, h3, h4, h5, h6)::after {
           content: "\\25BE"; display: inline-block; margin-left: 0.4em; font-size: 0.6em;
@@ -101,7 +160,8 @@ public enum ThemeBase {
           ::highlight(peep-find), ::highlight(peep-find-current) {
             background-color: transparent !important; color: inherit !important;
           }
-          [data-peep-changes] { display: none !important; }
+          [data-peep-changes], [data-peep-diagram-controls] { display: none !important; }
+          .peep-diagram-viewport > svg { transform: none !important; }
           :root { color-scheme: light !important; }
           :root, body { print-color-adjust: economy !important; }
           p { orphans: 3; widows: 3; }
@@ -120,7 +180,7 @@ public enum ThemeBase {
           tr, img, .remote-image { break-inside: avoid !important; }
           img { max-width: 100% !important; }
           h1, h2, h3, h4, h5, h6 { break-after: avoid !important; }
-          .markdown-alert { break-inside: avoid; }
+          .markdown-alert, .peep-diagram { break-inside: avoid; }
           .markdown-alert-title { break-after: avoid; }
         }
         /* GitHub's theme-specific images (`ColorModeImage`), and their remote-image placeholders:
@@ -133,6 +193,18 @@ public enum ThemeBase {
           \(hidingRule(for: .light))
         }
         """
+
+    /// One rule per STL shade bucket (`STLDiagram.shadeClasses`): fill and stroke at that
+    /// bucket's lightness, gray first for engines without relative colors.
+    private static var stlShadeRules: String {
+        STLDiagram.shadeClasses.enumerated().map { index, name in
+            let lightness = "0.\(420 + 75 * index)"  // 0.42 to 0.945
+            let gray = "oklch(\(lightness) 0 0)"
+            let tinted = "oklch(from currentColor \(lightness) c h)"
+            return ".\(name) { fill: \(gray); stroke: \(gray); fill: \(tinted); stroke: \(tinted); }"
+        }
+        .joined(separator: "\n        ")
+    }
 
     /// Hides the images (and placeholders) meant only for the other appearance. More specific
     /// than the placeholder's protected `display`, so it wins within this layer.

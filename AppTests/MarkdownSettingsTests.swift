@@ -114,6 +114,22 @@ final class MarkdownSettingsTests: DocumentWindowTestCase {
         #expect(defaults.object(forKey: MarkdownSettings.preprocessorsKey) == nil)
     }
 
+    @Test("diagrams are on by default; turning them off persists, and only off is stored")
+    func diagramsPersist() {
+        let store = store()
+        #expect(store.rendersDiagrams)
+        #expect(DocumentContent.renderOptions(preferences: store.preferences).diagrams)
+        store.rendersDiagrams = false
+        #expect(defaults.object(forKey: MarkdownSettings.diagramsKey) as? Bool == false)
+        #expect(!self.store().rendersDiagrams)
+        #expect(!DocumentContent.renderOptions(preferences: store.preferences).diagrams)
+        store.rendersDiagrams = true
+        #expect(defaults.object(forKey: MarkdownSettings.diagramsKey) == nil)
+        // An unreadable stored value is the default.
+        defaults.set("no", forKey: MarkdownSettings.diagramsKey)
+        #expect(store.rendersDiagrams)
+    }
+
     @Test("in memory under UI tests, never touching the defaults")
     func inMemory() {
         let store = MarkdownSettings(defaults: defaults, isPersistent: false)
@@ -161,6 +177,13 @@ final class MarkdownSettingsTests: DocumentWindowTestCase {
         #expect(store.builtInPreprocessors == [.wikiLinks])
         model.setBuiltInPreprocessor(.wikiLinks, isOn: false)
         #expect(store.builtInPreprocessors.isEmpty)
+
+        #expect(model.rendersDiagrams)
+        model.setRendersDiagrams(false)
+        #expect(!store.rendersDiagrams)
+        #expect(!model.rendersDiagrams)
+        store.rendersDiagrams = true
+        #expect(model.rendersDiagrams)
     }
 
     // MARK: Open documents
@@ -227,6 +250,19 @@ final class MarkdownSettingsTests: DocumentWindowTestCase {
         // The stale GFM page (with the appended text) shows first by design; wait for the
         // CommonMark render to replace it rather than checking once.
         try await until("the CommonMark render of the reload") { try await !pageHas("table", in: controller) }
+    }
+
+    @Test("turning diagrams off shows open documents' maps as code")
+    func diagramsApply() async throws {
+        defer { closeAll() }
+        let store = store()
+        let source = "```geojson\n{\"type\": \"Point\", \"coordinates\": [12.5, 41.9]}\n```\n"
+        let (_, controller) = try await open(source, markdownSettings: store)
+        #expect(try await pageHas("figure.peep-diagram svg", in: controller))
+
+        store.rendersDiagrams = false
+        try await until("the code block") { try await pageHas("pre code.language-geojson", in: controller) }
+        #expect(try await !pageHas("svg", in: controller))
     }
 
     @Test("a document opened after the change renders with it")

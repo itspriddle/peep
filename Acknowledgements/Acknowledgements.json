@@ -63,6 +63,23 @@
       "vendor": "github-markdown-css"
     },
     {
+      "name": "Mermaid",
+      "use": "Diagrams in the viewer",
+      "homepage": "https://mermaid.js.org",
+      "license": "MIT",
+      "licenseFile": "Vendor/mermaid/LICENSE",
+      "licenseSource": "https://github.com/mermaid-js/mermaid/blob/mermaid@12.3.0/LICENSE",
+      "vendor": "mermaid"
+    },
+    {
+      "name": "Libraries built into Mermaid",
+      "use": "Diagram layout and drawing (D3, DOMPurify, Cytoscape.js, ELK, KaTeX, and others)",
+      "homepage": "https://github.com/mermaid-js/mermaid",
+      "license": "MIT, ISC, BSD-3-Clause, Apache-2.0, EPL-2.0, MPL-2.0 or Apache-2.0, and Unlicense",
+      "licenseFile": "Vendor/mermaid/NOTICES",
+      "licenseSource": "https://registry.npmjs.org/mermaid/12.3.0"
+    },
+    {
       "name": "Octicons",
       "use": "Alert icons",
       "homepage": "https://github.com/primer/octicons",

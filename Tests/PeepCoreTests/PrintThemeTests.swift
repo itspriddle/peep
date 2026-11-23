@@ -86,4 +86,11 @@ struct PrintThemeTests {
         #expect(css.contains("p { orphans: 3; widows: 3; }"), "a default, not protected")
         #expect(css.contains(".markdown-body { max-width: none !important; padding: 0 !important; }"))
     }
+
+    @Test("diagram zoom controls never print, and a zoomed diagram prints whole")
+    func diagramControlsNeverPrint() throws {
+        let css = try #require(Self.printBlocks(in: ThemeBase.css).first)
+        #expect(css.contains("[data-peep-changes], [data-peep-diagram-controls] { display: none !important; }"))
+        #expect(css.contains(".peep-diagram-viewport > svg { transform: none !important; }"))
+    }
 }

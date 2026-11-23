@@ -9,6 +9,7 @@ import SwiftUI
 /// Sections, in reading (and VoiceOver) order:
 /// - Flavor: the default flavor, from `FlavorRegistry`.
 /// - Frontmatter: hidden or shown as a table.
+/// - Render diagrams (M7): geojson and topojson blocks as maps, stl blocks as models.
 /// - Built-in preprocessors: one toggle per `MarkdownSettings.optionalPreprocessors` entry
 ///   (wiki links, #53), with its note; hidden while the list is empty.
 /// - Custom preprocessor (#57) and Custom processor (#106): a `CustomProgramSection` each, last,
@@ -36,6 +37,12 @@ struct MarkdownSettingsView: View {
                 }
                 .accessibilityIdentifier("settings-frontmatter")
                 note("YAML or TOML at the top of a file. Shown as a table above the document, or hidden.")
+            }
+
+            Section {
+                Toggle("Render diagrams", isOn: binding(\.rendersDiagrams, model.setRendersDiagrams))
+                    .accessibilityIdentifier("settings-render-diagrams")
+                note("Draws geojson and topojson code blocks as maps (shapes only, no tiles), stl as shaded models.")
             }
 
             if !model.optionalPreprocessors.isEmpty {

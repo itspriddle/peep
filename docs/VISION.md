@@ -65,7 +65,10 @@ editor or a browser.
   5. **AST transforms** (`MarkdownTransform`), the flavor's plus the built-in preprocessors
      turned on in `RenderOptions.builtInPreprocessors`, in one fixed order whatever enabled
      them: alerts (#52), wiki links (#53), emoji shortcodes.
-  6. **HTML:** sanitize raw HTML, collect headings and anchors, highlight code, write markup.
+  6. **HTML:** draw diagrams (M7, `RenderOptions.diagrams`: ` ```geojson ` and ` ```topojson `
+     blocks as static SVG maps, ` ```stl ` blocks as shaded SVG models), sanitize raw HTML, collect headings and anchors, highlight code
+     (not diagram blocks), write markup. The word count reads the tree after diagrams, so a
+     drawn block has no words.
 
   **Custom processor (#106, opt-in, off by default)** replaces stages 4-6: the body after the
   frontmatter goes to the user's own renderer (pandoc, markdown-it, comrak, …;
@@ -143,6 +146,22 @@ editor or a browser.
   `make vendor-highlightjs`) runs in an in-process JavaScriptCore context behind the
   `SyntaxHighlighter` protocol. The language comes only from the info string's first word (no
   auto-detection, like GitHub).
+- **Diagrams (M7):** also at render time, in `PeepCore/Diagrams`, in pure Swift: a block whose
+  language is a `DiagramKind` (` ```geojson `, ` ```topojson `, ` ```stl `) becomes a
+  `<figure class="peep-diagram peep-diagram-<kind>">` holding an inline SVG (`role="img"`, an
+  `aria-label`, and an `sr-only` caption), so the viewer, `peep --html`, Copy as HTML, and Quick
+  Look get the same markup with no JavaScript. Maps are shapes only (no tiles), in Web Mercator
+  (latitude clamped to ±85.0511) fitted to the shapes; shapes crossing the antimeridian aren't
+  split. Paths carry classes (`peep-map-area`, `peep-map-line`, `peep-map-point`), never colors:
+  `ThemeBase` styles them from `currentColor`, so every theme works light, dark, and print.
+  STL models (ASCII STL; binary can't be written in a code block) are a static shaded drawing,
+  not GitHub's interactive viewer: a fixed three-quarter isometric camera (from the front right,
+  above, Z up), orthographic and fitted; normals recomputed from the vertices (the file's are
+  ignored), back faces culled, facets painted back to front by centroid depth, and Lambert
+  shading against a fixed light quantized to 8 classes (`peep-stl-s0` darkest to `peep-stl-s7`),
+  which `ThemeBase` fills at fixed lightnesses in the text color's hue. Painter's order by
+  centroid can misdraw interpenetrating or badly overlapping facets; no depth buffer.
+  Unreadable input, an empty drawing, or a block over a cap stays the plain code block.
 - **Display:** `WKWebView`. HTML + CSS is what makes CSS themes, print styles, and PDF export
   possible; SwiftUI-native renderers (e.g. Textual, MarkdownView) can't use stylesheets.
 - **App:** AppKit document architecture hosting SwiftUI views. `MarkdownDocument` is an
@@ -577,7 +596,7 @@ editor or a browser.
   - Render flags (#65, `RenderFlagOptions`, help section "Rendering"): `--frontmatter
     hidden|table`, `--wiki-links`/`--no-wiki-links` (pins `.wikiLinks`, so it beats
     `peep.wikilinks`; off by default), `--source-lines`, `--no-highlight`,
-    `--no-heading-anchors`, `--block-remote-images` (#20's placeholder; kept by default, as
+    `--no-diagrams`, `--no-heading-anchors`, `--block-remote-images` (#20's placeholder; kept by default, as
     GitHub does). They change HTML output only, so without `--html`, `--fragment`, or `--output`
     they are a usage error (64). **The CLI never reads the app's Settings > Markdown**: flags
     only, so the same command gives the same output whatever the app is set to.
@@ -831,6 +850,31 @@ editor or a browser.
   with `callAsyncJavaScript` using fixed function bodies; every value (lines, fragments, HTML)
   is passed as an argument, never spliced into script source. Tests prove page scripts stay
   blocked while app scripts run.
+- **Mermaid runs in its own world (#117).** The viewer draws ` ```mermaid ` blocks with a
+  vendored, pinned mermaid (`Vendor/mermaid`, `make vendor-mermaid`) in a second isolated world,
+  `peep-diagrams` (`DiagramScripts`), separate from the app scripts' and with **no message
+  handlers**, so a mermaid bug can reach neither the app's bridge nor the app. The CSP and the
+  page JavaScript setting don't change: mermaid needs no `unsafe-eval`, and its SVG's inline
+  `<style>` is covered by `style-src 'unsafe-inline'` (spike, #117). It's evaluated only in pages
+  that have mermaid blocks while Render diagrams is on (`RenderedDocument.hasMermaidBlocks`), with
+  `securityLevel: "strict"` (labels sanitized by its DOMPurify, no click handlers); the block's
+  text is read as a value, and the SVG is parsed inert and stripped of scripts, event
+  attributes, and `javascript:` links before it goes in a `figure.peep-diagram` after the hidden
+  code block. An image in a label loads only as the CSP and `LocalImagePolicy` allow, like any
+  document image. Headless output, Copy as HTML, and Quick Look keep the `language-mermaid` code
+  block: no JavaScript runs outside the viewer.
+  - **Diagram controls and the diagram window.** Zoom, pan, and Open in Window on every
+    diagram are an app script (`DiagramControls.js`) in the app's `peep` world, never in
+    `peep-diagrams`. Its one message handler, `diagramWindow`, takes a figure index and only
+    from that world. The app reads the SVG back and shows it in a panel whose web view has
+    JavaScript off, no user scripts, no message handlers, and no scheme handlers. It allows only
+    its own page (`DiagramWindowPage`, with `ContentSecurityPolicy.diagramWindow`: no scripts,
+    `data:` images only) and cancels every other navigation.
+  - **Licenses.** mermaid's bundle includes elkjs (EPL-2.0 OR GPL-3.0-or-later; mermaid's ELK
+    layout). Peep takes it under EPL-2.0, which asks an object code distribution to say where the
+    source is: `make vendor-mermaid` writes that note (the upstream tag) into
+    `Vendor/mermaid/NOTICES` for every EPL package, and fails if it can't. Every other bundled
+    package is permissive (MIT, ISC, BSD, Apache-2.0, MPL-2.0 or Apache-2.0, Unlicense).
 - Raw HTML in Markdown is sanitized per a defined policy rather than passed through blindly.
   - **No `--no-sanitize` (#65).** The CLI has no way to turn sanitizing off. Headless output is
     a page meant to be opened in a browser, where page JavaScript isn't disabled as it is in
@@ -847,6 +891,16 @@ editor or a browser.
   and is re-serialized before insertion; anything else falls back to plain escaped code.
   JavaScriptCore has no execution time limit, so blocks over 128 KB and code beyond a 256 KB
   per-document budget are left unhighlighted.
+- Diagrams (M7) are renderer output, so they are safe by construction rather than sanitized:
+  every byte comes from `SVGWriter`, which writes only fixed element and attribute names,
+  literals from Peep's source, escaped text, and finite numbers it formats itself. No input
+  string (a GeoJSON property, a TopoJSON object name, an STL `solid` name) is ever written;
+  they aren't even read.
+  No tiles or other remote loads, and no script. JSON parsing is bounded: blocks over 1 MB
+  aren't read, a document draws at most 200,000 coordinates (TopoJSON arcs count each time they
+  are used, an STL facet costs 3), `GeometryCollection` nesting stops at 32 levels, and an STL
+  block holds at most 50,000 facets; past a cap the block stays code. STL is parsed line by
+  line with no recursion.
 - Links go through one tested navigation policy (`LinkPolicy` in `PeepCore`, #19), and nothing
   navigates the viewer away from the document: the only main-frame navigations allowed are the
   page loads the app starts. In-page fragments scroll via the app-script bridge (raw id, then
@@ -1031,7 +1085,8 @@ editor or a browser.
     remote loads). The page's CSP is `ContentSecurityPolicy.quickLook` (`img-src data:`, no
     scripts).
   - **Settings cross one way, as data:** the app (not sandboxed) publishes a
-    `QuickLookConfiguration` (theme id, flavor, frontmatter display, built-in preprocessors) to
+    `QuickLookConfiguration` (theme id, flavor, frontmatter display, built-in preprocessors,
+    whether diagrams are drawn: static SVG, M7) to
     a team-prefixed App Group, `<team>.now.peep` (`QuickLookConfigurationPublisher`). For a
     custom theme it includes the file's text, which the extension checks again with
     `CustomThemeCSS` before using; anything unreadable is the default. The configuration has no

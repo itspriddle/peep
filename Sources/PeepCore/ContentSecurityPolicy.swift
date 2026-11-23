@@ -29,6 +29,10 @@ public struct ContentSecurityPolicy: Sendable, Equatable {
     /// so every other image is a placeholder already (`RemoteImagePolicy.blockAll`).
     public static let quickLook = ContentSecurityPolicy(imageSources: ["data:"])
 
+    /// The app's diagram window (`DiagramWindowPage`): `data:` images only. Its SVG is the
+    /// viewer's own markup, which never loads anything else.
+    public static let diagramWindow = ContentSecurityPolicy(imageSources: ["data:"])
+
     /// The policy as a `<meta http-equiv="Content-Security-Policy">` value.
     public var header: String {
         "default-src 'none'; style-src 'unsafe-inline'; img-src \(imageSources.joined(separator: " "));"

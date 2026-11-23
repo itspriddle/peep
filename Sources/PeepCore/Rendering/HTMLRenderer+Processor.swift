@@ -10,7 +10,8 @@ extension HTMLRenderer {
     /// gets an anchor (a heading with its own `id` keeps it; the slug goes on the anchor link),
     /// so the outline and in-page links work. Headings have no source line: the processor's
     /// HTML has no `data-source-line`. The word count is of the body as Peep parses it with the
-    /// resolved flavor, which is close to what any renderer shows.
+    /// resolved flavor, which is close to what any renderer shows; so is `hasMermaidBlocks` (the
+    /// viewer then draws any `language-mermaid` code blocks in the processor's HTML).
     public func render(processedHTML: String, of prepared: PreparedSource) -> RenderedDocument {
         let renderer = prepared.renderer(from: self)
         var blockedRemoteImages: [RemoteImage] = []
@@ -42,7 +43,8 @@ extension HTMLRenderer {
             blockedRemoteImages: blockedRemoteImages,
             overrides: prepared.overrides,
             flavor: renderer.options.flavor,
-            wordCount: WordCount.count(in: parsed)
+            wordCount: WordCount.count(in: parsed),
+            hasMermaidBlocks: renderer.options.diagrams && MermaidBlocks.contains(in: parsed)
         )
     }
 }

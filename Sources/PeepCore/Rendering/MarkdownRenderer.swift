@@ -40,6 +40,12 @@ public struct RenderOptions: Sendable, Equatable {
     /// Syntax-highlight fenced code blocks that name a language, at render time (#11). Needs
     /// `HTMLRenderer.highlighter`; blocks render as plain escaped code without one.
     public var highlighting = true
+    /// Draw fenced ` ```geojson ` and ` ```topojson ` blocks as static SVG maps and ` ```stl `
+    /// (ASCII STL) blocks as shaded SVG models, at render time (M7, `DiagramRendering`): no
+    /// tiles, no JavaScript. Off, or for a block that can't be drawn, they render as code.
+    /// Also whether the viewer draws ` ```mermaid ` blocks (`RenderedDocument.hasMermaidBlocks`,
+    /// #117); in the HTML they are code either way.
+    public var diagrams = true
     /// Remote images (`RemoteImage`): kept as `<img>` (GitHub-compatible, `peep --html`), or
     /// replaced with a labeled placeholder (#20). The viewer blocks them until the user opts in.
     /// Raw-HTML images are only replaced when `sanitize` is on.
@@ -100,11 +106,15 @@ public struct RenderedDocument: Sendable, Equatable {
     public var flavor: Flavor
     /// The words in the rendered body (`WordCount`): what the reader sees, without frontmatter.
     public var wordCount: Int
+    /// Whether the body has a mermaid code block for the viewer to draw (`MermaidBlocks`, #117):
+    /// always `false` with `RenderOptions.diagrams` off. The HTML keeps it as a code block; the
+    /// app's viewer draws it, loading mermaid only for pages where this is true.
+    public var hasMermaidBlocks: Bool
 
     public init(
         html: String, title: String? = nil, headings: [Heading] = [], frontmatter: Frontmatter? = nil,
         blockedRemoteImages: [RemoteImage] = [], overrides: DocumentOverrides = .none, flavor: Flavor = .gfm,
-        wordCount: Int = 0
+        wordCount: Int = 0, hasMermaidBlocks: Bool = false
     ) {
         self.html = html
         self.title = title
@@ -114,6 +124,7 @@ public struct RenderedDocument: Sendable, Equatable {
         self.overrides = overrides
         self.flavor = flavor
         self.wordCount = wordCount
+        self.hasMermaidBlocks = hasMermaidBlocks
     }
 }
 

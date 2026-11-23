@@ -25,9 +25,20 @@ struct QuickLookTests {
         let configuration = QuickLookConfiguration(
             themeID: "custom:solarized.css",
             customTheme: QuickLookCustomTheme(fileName: "solarized.css", css: Self.safeCSS), flavorID: "commonmark",
-            frontmatterDisplay: .table, builtInPreprocessors: [.wikiLinks])
+            frontmatterDisplay: .table, builtInPreprocessors: [.wikiLinks], rendersDiagrams: false)
         let data = try #require(configuration.encoded())
         #expect(QuickLookConfiguration(data: data) == configuration)
+    }
+
+    @Test("maps are drawn unless the configuration turns diagrams off; older values have them on")
+    func diagrams() throws {
+        let source = "```geojson\n{\"type\": \"Point\", \"coordinates\": [12.5, 41.9]}\n```\n"
+        #expect(QuickLookConfiguration.default.rendersDiagrams)
+        #expect(QuickLookConfiguration(data: Data(#"{"builtInPreprocessors":[]}"#.utf8)).rendersDiagrams)
+        #expect(try page(source).contains("<figure class=\"peep-diagram peep-diagram-geojson\"><svg"))
+        let off = try page(source, QuickLookConfiguration(rendersDiagrams: false))
+        #expect(!off.contains("<svg class=\"peep-map\""))
+        #expect(off.contains("language-geojson"))
     }
 
     @Test(

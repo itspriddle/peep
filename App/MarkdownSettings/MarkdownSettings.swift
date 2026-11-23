@@ -20,8 +20,11 @@ struct MarkdownPreferences: Equatable, Sendable {
     /// The custom processor (#106), which renders the body in place of Peep's renderer, or `nil`
     /// when it's off. Filled in and ignored like `customPreprocessor`.
     var customProcessor: CustomProgramPreference?
+    /// Draw geojson and topojson blocks as maps and stl blocks as models (M7, `RenderOptions.diagrams`).
+    var rendersDiagrams = true
 
-    /// GFM, frontmatter hidden, no built-in preprocessors: the app before #55, and `peep --html`.
+    /// GFM, frontmatter hidden, no built-in preprocessors, diagrams on: the app before #55, and
+    /// `peep --html`.
     static let `default` = MarkdownPreferences()
 
     /// Applies these preferences to `options`.
@@ -29,11 +32,12 @@ struct MarkdownPreferences: Equatable, Sendable {
         options.flavor = flavor
         options.frontmatterDisplay = frontmatterDisplay
         options.builtInPreprocessors = builtInPreprocessors
+        options.diagrams = rendersDiagrams
     }
 }
 
 /// The reader's Markdown settings (#55), persisted in `UserDefaults`: the default flavor, how
-/// frontmatter shows, and which built-in preprocessors are on. Only Settings > Markdown sets
+/// frontmatter shows, which built-in preprocessors are on, and whether diagrams are drawn (M7). Only Settings > Markdown sets
 /// them. They apply to every document, open ones included: each `MarkdownDocument` follows
 /// `didChangeNotification` and re-renders in place, keeping the reading position (the live
 /// reload path).
@@ -53,6 +57,8 @@ final class MarkdownSettings {
     static let flavorKey = "DefaultFlavor"
     static let frontmatterKey = "FrontmatterDisplay"
     static let preprocessorsKey = "BuiltInPreprocessors"
+    /// Stored only when off (`false`).
+    static let diagramsKey = "RendersDiagrams"
 
     /// The built-in preprocessors Settings offers, in the order it lists them: opt-in
     /// `MarkdownTransform`s, never flavor-owned ones (emoji, alerts). Settings > Markdown hides
@@ -78,7 +84,8 @@ final class MarkdownSettings {
     /// Everything a render needs, as one value.
     var preferences: MarkdownPreferences {
         MarkdownPreferences(
-            flavor: defaultFlavor, frontmatterDisplay: frontmatterDisplay, builtInPreprocessors: builtInPreprocessors)
+            flavor: defaultFlavor, frontmatterDisplay: frontmatterDisplay, builtInPreprocessors: builtInPreprocessors,
+            rendersDiagrams: rendersDiagrams)
     }
 
     /// The default flavor's id, resolved in `registry` (an unknown stored id is the registry's
@@ -158,6 +165,31 @@ final class MarkdownSettings {
                 }
             } else {
                 memory.builtInPreprocessors = allowed
+            }
+            didChange()
+        }
+    }
+
+    /// Whether geojson, topojson, and stl blocks are drawn as maps and models; on by default.
+    var rendersDiagrams: Bool {
+        get {
+            guard isPersistent else {
+                return memory.rendersDiagrams
+            }
+            return defaults.object(forKey: Self.diagramsKey) as? Bool ?? true
+        }
+        set {
+            guard newValue != rendersDiagrams else {
+                return
+            }
+            if isPersistent {
+                if newValue {
+                    defaults.removeObject(forKey: Self.diagramsKey)
+                } else {
+                    defaults.set(false, forKey: Self.diagramsKey)
+                }
+            } else {
+                memory.rendersDiagrams = newValue
             }
             didChange()
         }
