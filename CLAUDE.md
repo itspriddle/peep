@@ -241,7 +241,8 @@ lock the build database.
     changed; while the setting is on, that sets `raiseTarget` (the document's window nearest the
     front; any other `setContent` clears it), and that window's display task calls
     `bringForwardAfterReload()` (`DocumentWindowController+RaiseOnChange.swift`: unminimize,
-    make key, `NSApp.activate()`) after marking changes.
+    make key, `NSApp.activate(ignoringOtherApps: true)`: the cooperative `NSApp.activate()` is
+    refused from the background) after marking changes.
   - `Updates/` (#81): Sparkle 2 (app target only). `SoftwareUpdating` (what the menu and
     Settings use; fakes in tests), `SparkleUpdater` (`SPUStandardUpdaterController`, started from
     `AppDelegate.applicationDidFinishLaunching`; channels), `InactiveUpdater` (in memory, never
