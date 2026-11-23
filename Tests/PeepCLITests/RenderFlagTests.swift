@@ -110,7 +110,8 @@ struct RenderFlagTests {
     @Test(
         "Rendering flags without HTML output are a usage error",
         arguments: [
-            ["--source-lines"], ["--wiki-links"], ["--no-wiki-links"], ["--verbose"], ["--frontmatter", "table"],
+            ["--source-lines"], ["--wiki-links"], ["--color-swatches"], ["--no-wiki-links"], ["--verbose"],
+            ["--frontmatter", "table"],
             ["--no-highlight"], ["--no-diagrams"], ["--block-remote-images"], ["--no-heading-anchors"],
         ])
     func needHTMLOutput(flags: [String]) async throws {
@@ -285,5 +286,19 @@ struct RenderFlagTests {
         #expect(!result.stdout.contains("peep:"))
         #expect(result.stderr.contains("flavor gfm (default)"))
         #expect(result.stderr.contains("warning: peep.sanitize"))
+    }
+}
+
+// MARK: Color swatches
+
+extension RenderFlagTests {
+    @Test("--color-swatches draws a swatch after color code spans; they're off by default")
+    func colorSwatches() async {
+        let plain = await CLIHarness.run(["--fragment"], stdin: "`#0969DA`\n")
+        let swatches = await CLIHarness.run(["--fragment", "--color-swatches"], stdin: "`#0969DA`\n")
+        #expect(plain.stdout == "<p><code>#0969DA</code></p>\n")
+        #expect(swatches.status == 0)
+        #expect(
+            swatches.stdout.contains("#0969DA<span class=\"peep-color-swatch\" style=\"background-color: #0969da\">"))
     }
 }
