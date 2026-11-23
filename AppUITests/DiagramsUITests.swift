@@ -39,4 +39,32 @@ final class DiagramsUITests: XCTestCase {
         XCTAssertFalse(peep.renderedText("solid tetrahedron", in: window).exists)
         XCTAssertFalse(peep.renderedText("FeatureCollection", in: window).exists)
     }
+
+    /// Zoom and Open in Window (`DiagramControls.js`, `DiagramPanelController`): each diagram has
+    /// controls; Open in Window shows it larger in a panel, which Escape closes.
+    func testDiagramControlsZoomAndOpenInWindow() throws {
+        let peep = try PeepUITestApp.launch(openingFixture: "diagrams.md")
+        self.peep = peep
+        let window = peep.waitForWindow(titled: "Diagrams Fixture")
+        peep.waitForRenderedText("Mermaid start node", in: window)
+        let webView = peep.webView(in: window)
+
+        let zoomIn = webView.buttons["Zoom In"].firstMatch
+        XCTAssertTrue(zoomIn.waitForExistence(timeout: PeepUITestApp.defaultTimeout), "no zoom controls")
+        XCTAssertEqual(webView.buttons.matching(identifier: "Open in Window").count, 4)
+        zoomIn.click()
+        webView.buttons["Reset Zoom"].firstMatch.click()
+
+        webView.buttons["Open in Window"].firstMatch.click()
+        let panel = peep.app.dialogs["diagram-window"]
+        if !panel.waitForExistence(timeout: PeepUITestApp.defaultTimeout) {
+            peep.attachAccessibilityTree()
+            XCTFail("Open in Window showed no diagram window")
+        }
+        XCTAssertTrue(panel.title.hasPrefix("Diagrams Fixture"), panel.title)
+        panel.typeKey(.escape, modifierFlags: [])
+        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: panel)
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: PeepUITestApp.defaultTimeout), .completed)
+        XCTAssertTrue(window.exists)
+    }
 }

@@ -54,6 +54,8 @@ final class WebViewCoordinator: NSObject {
     var documentFileURL: URL?
     /// Performs every link action except in-page scrolling (opening documents and URLs).
     var linkHandler: ((LinkAction, LinkOpening) -> Void)?
+    /// Where Open in Window on a diagram's controls goes (`+DiagramWindow.swift`).
+    var diagramWindowHandler: ((DiagramWindowContent) -> Void)?
     /// The link and image under the last context menu (`ContextMenuLink.js`), for Share.
     var contextMenuTarget = ContextMenuTarget()
 
@@ -119,6 +121,10 @@ final class WebViewCoordinator: NSObject {
         webView.configuration.userContentController.add(
             LinkHoverMessageHandler(coordinator: self), contentWorld: AppScripts.world,
             name: LinkHoverMessageHandler.name)
+        // Open in Window clicks from `DiagramControls.js`, accepted from the app's content world only.
+        webView.configuration.userContentController.add(
+            DiagramWindowMessageHandler(coordinator: self), contentWorld: AppScripts.world,
+            name: DiagramWindowMessageHandler.name)
     }
 
     /// Scopes local image access to the document at `fileURL` (its `LocalResourceRoot`) and

@@ -32,6 +32,8 @@ final class DocumentWindowController: NSWindowController {
     var pendingSourceLine: Double?
     /// This window's remote image opt-in (#20); never saved, kept across reloads.
     let remoteImages = RemoteImageOptIn()
+    /// The diagram window (Open in Window on a diagram), made on first use (`+DiagramWindow.swift`).
+    var diagramPanel: DiagramPanelController?
     /// The progress indicator for slow renders (#58, `+RenderProgress.swift`).
     let renderProgress: RenderProgress
 
@@ -144,6 +146,7 @@ final class DocumentWindowController: NSWindowController {
         installChangeHighlights()
         installTheme()
         installPin()
+        installDiagramWindow()
     }
 
     @available(*, unavailable)
@@ -187,6 +190,7 @@ final class DocumentWindowController: NSWindowController {
     /// closes (seen in the hosted tests, even for a plain `NSWindow`); without this, its
     /// document, web view, and web content process stayed alive with it.
     private func releaseContent() {
+        closeDiagramWindow()
         displayTask?.cancel()
         displayTask = nil
         window?.contentViewController = nil
