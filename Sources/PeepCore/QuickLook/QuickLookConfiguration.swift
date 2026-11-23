@@ -34,7 +34,7 @@ public struct QuickLookConfiguration: Codable, Sendable, Equatable {
     /// The key the encoded configuration is stored under in the App Group's defaults.
     public static let defaultsKey = "QuickLookConfiguration"
     /// The built-in preprocessors Quick Look may run (Settings > Markdown's optional ones).
-    public static let optionalPreprocessors: Set<MarkdownTransform> = [.wikiLinks]
+    public static let optionalPreprocessors: Set<MarkdownTransform> = [.wikiLinks, .colorSwatches]
 
     /// The theme id: the app's Quick Look theme, else its default theme. `nil` is the registry's
     /// default.

@@ -50,7 +50,7 @@ struct HeadingCollection {
             case .image:
                 // Alt text is not part of `textContent`.
                 continue
-            case .text(let text), .code(let text):
+            case .text(let text), .code(let text), .colorCode(let text, _):
                 appendToOpenRaw(slug: text, display: text)
             case .emoji(let shortcode, let character):
                 appendToOpenRaw(slug: ":\(shortcode):", display: character)

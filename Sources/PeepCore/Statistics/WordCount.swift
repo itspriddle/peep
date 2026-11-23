@@ -26,7 +26,7 @@ public enum WordCount {
         var stack = [root]
         while let node = stack.popLast() {
             switch node.kind {
-            case .text(let string), .code(let string):
+            case .text(let string), .code(let string), .colorCode(let string, _):
                 text += string
             case .codeBlock(let block):
                 text += "\n"

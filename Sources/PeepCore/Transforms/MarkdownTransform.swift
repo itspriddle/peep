@@ -15,7 +15,8 @@
 /// 1. `alerts` (#52): block structure, so it runs first; it reads the `[!NOTE]` marker before
 ///    any inline transform could change that text.
 /// 2. `wikiLinks` (#53): turns `[[Page]]` text into link nodes.
-/// 3. `emojiShortcodes`: last, so it also converts shortcodes in text other transforms produce
+/// 3. `colorSwatches`: marks code spans that are a color; independent of the others.
+/// 4. `emojiShortcodes`: last, so it also converts shortcodes in text other transforms produce
 ///    (alert bodies, wiki link labels), as it does in ordinary link text.
 ///
 /// Adding a transform: a case here at its place in that order, a type conforming to
@@ -30,6 +31,10 @@ public enum MarkdownTransform: String, CaseIterable, Sendable, Hashable {
     /// preprocessor, independent of the flavor; resolved by `HTMLRenderer.wikiLinkResolver`.
     case wikiLinks
 
+    /// Code spans that are a color (`` `#0969DA` ``) get a swatch, as in GitHub comments. An
+    /// opt-in built-in preprocessor, independent of the flavor (`ColorSwatches`).
+    case colorSwatches
+
     /// GitHub emoji shortcodes (`:tada:`) in text become emoji (#10). GFM only.
     case emojiShortcodes = "emoji"
 
@@ -38,6 +43,7 @@ public enum MarkdownTransform: String, CaseIterable, Sendable, Hashable {
         switch self {
         case .alerts: GitHubAlerts.self
         case .wikiLinks: WikiLinks.self
+        case .colorSwatches: ColorSwatches.self
         case .emojiShortcodes: EmojiShortcodes.self
         }
     }
@@ -60,7 +66,8 @@ public enum MarkdownTransform: String, CaseIterable, Sendable, Hashable {
 /// Rules every implementation follows:
 ///
 /// - Rewrite only what the parser left as `text` (and inline structure around it); never look
-///   inside `code`, `codeBlock`, `htmlInline`, `htmlBlock`, or link destinations.
+///   inside `code`, `codeBlock`, `htmlInline`, `htmlBlock`, or link destinations. One exception:
+///   `ColorSwatches` checks whether a whole `code` literal is a color and only re-labels the node.
 /// - Give every new node a `sourceRange` (usually the range of the text it replaces), so source
 ///   lines and outline positions survive the pass.
 /// - Never build HTML. Produce `MarkdownNode`s (adding a `Kind` if needed) that `HTMLRenderer`

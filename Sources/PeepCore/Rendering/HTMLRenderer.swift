@@ -201,7 +201,8 @@ extension HTMLRenderer {
             return false
         case .wikiLink(let link):
             renderWikiLinkStart(link, into: &output)
-        case .codeBlock, .htmlBlock, .thematicBreak, .text, .softBreak, .lineBreak, .code, .htmlInline, .emoji:
+        case .codeBlock, .htmlBlock, .thematicBreak, .text, .softBreak, .lineBreak, .code, .colorCode, .htmlInline,
+            .emoji:
             renderLeaf(node, into: &output)
             return false
         case .table, .tableRow, .tableCell, .strikethrough, .taskItem, .footnoteReference, .footnoteDefinition, .alert:
@@ -305,6 +306,11 @@ extension HTMLRenderer {
             output.raw("<code>")
             output.text(code)
             output.raw("</code>")
+        case .colorCode(let code, let color):
+            // `hex` is built from the color's bytes, never from the document's text.
+            output.raw("<code>")
+            output.text(code)
+            output.raw("<span class=\"peep-color-swatch\" style=\"background-color: \(color.hex)\"></span></code>")
         default:
             break
         }
@@ -360,7 +366,8 @@ extension HTMLRenderer {
         var stack = node.children.reversed() as [MarkdownNode]
         while let current = stack.popLast() {
             switch current.kind {
-            case .text(let literal), .code(let literal), .htmlInline(let literal), .emoji(_, let literal):
+            case .text(let literal), .code(let literal), .colorCode(let literal, _), .htmlInline(let literal),
+                .emoji(_, let literal):
                 text += literal
             case .softBreak, .lineBreak:
                 text += " "

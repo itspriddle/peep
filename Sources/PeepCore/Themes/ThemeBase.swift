@@ -20,7 +20,8 @@
 ///   `MermaidDiagrams.js`) staying hidden behind its diagram (the error note's look is a default);
 /// - diagram zoom controls (`[data-peep-diagram-controls]`, the app's `DiagramControls.js`) and
 ///   zoom never printed (the controls' look is a default);
-/// - diagrams' look (`.peep-diagram`, the map and STL classes; M7) is a default;
+/// - diagrams' look (`.peep-diagram`, the map and STL classes; M7) and color swatches'
+///   (`.peep-color-swatch`) are defaults;
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
 /// - structural print rules (#26, #38): light color scheme, no page background, full width,
 ///   nothing clipped, no anchor icons, sensible page breaks. External link targets written out
@@ -109,6 +110,16 @@ public enum ThemeBase {
         /* Wiki links (#53) to a missing page have no href, so themes style them as plain text
            (`a:not([href])`); a dashed underline keeps them distinguishable. */
         .wikilink-missing { border-bottom: 1px dashed; cursor: default; }
+        /* Color swatches (`ColorSwatches`): a dot after a code span that is a color, as on GitHub.
+           The ring follows the text, so white and black dots show on any theme; the dot prints.
+           Centered on the cap height (about 0.7em), since color codes are digits and capitals:
+           an empty inline-block's baseline is its bottom edge, raised by half the cap height less
+           half the 10px box. (`middle` centers on the x-height and sits low.) */
+        .peep-color-swatch {
+          display: inline-block; width: 8px; height: 8px; margin-left: 4px; vertical-align: calc(0.35em - 5px);
+          border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: 50%;
+          print-color-adjust: exact;
+        }
         /* Collapsible sections (the app's CollapsibleSections.js, while Settings turns them on): a
            folded block is hidden, and a top-level heading shows a chevron after its text on hover
            or focus, and always while collapsed. Never set by documents (the sanitizer drops
