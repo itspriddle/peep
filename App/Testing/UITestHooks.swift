@@ -35,6 +35,8 @@ import Foundation
 ///   (`ChangeHighlightsSettings`, in memory). Without it a UI-test launch has it off.
 /// - `-PeepUITestScrollToChanges YES`: start with "Scroll to the first change" on
 ///   (`ChangeHighlightsSettings.scrollsToChanges`, in memory). Without it a UI-test launch has it off.
+/// - `-PeepUITestRaiseOnChange YES`: start with "Bring the window to the front when a file is
+///   saved" on (`RaiseOnChangeSettings`, in memory). Without it a UI-test launch has it off.
 ///
 /// UI-test launches (and hosted unit tests) never add to Open Recent (`DocumentController`).
 enum UITestHooks {
@@ -59,6 +61,8 @@ enum UITestHooks {
         static let changeHighlightsKey = "PeepUITestChangeHighlights"
         /// Launch argument (a `UserDefaults` key): YES starts with scrolling to changes on.
         static let scrollToChangesKey = "PeepUITestScrollToChanges"
+        /// Launch argument (a `UserDefaults` key): YES starts with raising windows on change on.
+        static let raiseOnChangeKey = "PeepUITestRaiseOnChange"
     #endif
 
     /// Whether a UI test launched the app. Always `false` in Release builds.
@@ -187,6 +191,15 @@ enum UITestHooks {
     static var scrollsToChanges: Bool {
         #if DEBUG
             isUITesting && UserDefaults.standard.bool(forKey: scrollToChangesKey)
+        #else
+            false
+        #endif
+    }
+
+    /// Whether a UI test asked for raising windows on change on. Always `false` in Release builds.
+    static var raisesWindowOnChange: Bool {
+        #if DEBUG
+            isUITesting && UserDefaults.standard.bool(forKey: raiseOnChangeKey)
         #else
             false
         #endif

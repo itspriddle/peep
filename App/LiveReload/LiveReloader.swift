@@ -111,7 +111,8 @@ final class LiveReloader {
         }
         cancelReload()
         let generation = generation
-        let currentSource = force ? nil : document.content?.source
+        let previousSource = document.content?.source
+        let currentSource = force ? nil : previousSource
         // Only a page with source lines can be marked: not a custom processor's (#106).
         let previousRenderedSource =
             document.changeHighlightsSettings.isEnabled && document.content?.processedHTML == nil
@@ -141,7 +142,7 @@ final class LiveReloader {
             document.updateRenderActivity()
             switch result {
             case .success(let content?):
-                document.setContent(content, changes: changes)
+                document.setContent(content, changes: changes, textChanged: content.source != previousSource)
             case .success(nil):
                 document.fileStatus = .current
             case .failure(let error):

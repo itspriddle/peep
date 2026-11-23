@@ -4,7 +4,9 @@ import SwiftUI
 /// file is saved" and its supplemental "Scroll to the first change" (disabled while highlights
 /// are off) read `SettingsModel` and change the settings through `setHighlightsChanges(_:)` and
 /// `setScrollsToChanges(_:)`; the identifiers (`settings-highlight-changes`,
-/// `settings-scroll-to-changes`) are for UI tests.
+/// `settings-scroll-to-changes`) are for UI tests. "Bring the window to the front when a file is
+/// saved" changes `RaiseOnChangeSettings` through `setRaisesWindowOnChange(_:)`
+/// (`settings-raise-on-change`).
 struct ReadingSettingsView: View {
     let model: SettingsModel
 
@@ -29,6 +31,14 @@ struct ReadingSettingsView: View {
                 .padding(.leading, 20)
                 note("When no change is in view after a save, scroll to the first one.")
                     .padding(.leading, 20)
+            }
+            Section {
+                Toggle(
+                    "Bring the window to the front when a file is saved",
+                    isOn: binding(\.raisesWindowOnChange, model.setRaisesWindowOnChange)
+                )
+                .accessibilityIdentifier("settings-raise-on-change")
+                note("When a document’s file changes, its window comes to the front and Peep becomes the active app.")
             }
         }
         .formStyle(.columns)
