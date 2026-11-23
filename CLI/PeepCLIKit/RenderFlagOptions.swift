@@ -33,6 +33,9 @@ public struct RenderFlagOptions: ParsableArguments, Sendable {
         help: "Turn [[wiki links]] on or off. Beats the document's peep.wikilinks (default: off).")
     public var wikiLinks: Bool?
 
+    @Flag(help: "Show a color swatch after inline code that is a color, like #0969DA (default: off).")
+    public var colorSwatches = false
+
     @Flag(help: "Add data-source-line attributes (the line each block starts on).")
     public var sourceLines = false
 
@@ -58,12 +61,13 @@ public struct RenderFlagOptions: ParsableArguments, Sendable {
     /// Whether any flag here was given. They change headless output only, so without `--html`,
     /// `--fragment`, or `--output` they are a usage error (`PeepCommand.validate()`).
     var isSet: Bool {
-        frontmatter != .hidden || wikiLinks != nil || sourceLines || noHighlight || noDiagrams || noHeadingAnchors
+        frontmatter != .hidden || wikiLinks != nil || colorSwatches || sourceLines || noHighlight || noDiagrams
+            || noHeadingAnchors
             || blockRemoteImages || verbose
     }
 
     /// Sets this group's `RenderOptions`. Without flags these are `RenderOptions`' defaults
-    /// (frontmatter hidden, no wiki links, no `data-source-line`, highlighting, diagrams, and
+    /// (frontmatter hidden, no wiki links or color swatches, no `data-source-line`, highlighting, diagrams, and
     /// heading anchors on, remote images kept). `--wiki-links`/`--no-wiki-links` pin `.wikiLinks`, so
     /// the document's `peep.wikilinks` doesn't replace the flag.
     func apply(to options: inout RenderOptions) {
@@ -75,6 +79,9 @@ public struct RenderFlagOptions: ParsableArguments, Sendable {
                 options.builtInPreprocessors.remove(.wikiLinks)
             }
             options.pinnedOverrides.insert(.wikiLinks)
+        }
+        if colorSwatches {
+            options.builtInPreprocessors.insert(.colorSwatches)
         }
         options.sourceLines = sourceLines
         options.highlighting = !noHighlight

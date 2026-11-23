@@ -104,6 +104,7 @@ extension MarkdownTransform {
         switch self {
         case .alerts: "GitHub alerts"
         case .wikiLinks: "Wiki links"
+        case .colorSwatches: "Color swatches"
         case .emojiShortcodes: "Emoji shortcodes"
         }
     }
@@ -115,6 +116,9 @@ extension MarkdownTransform {
         case .wikiLinks:
             "Turns [[Page Name]] into a link to Page-Name.md, found in the document's folder, then its repository. "
                 + "A document's frontmatter can turn them on or off."
+        case .colorSwatches:
+            "Shows a dot after inline code that is a color, like #0969DA, rgb(9, 105, 218), or "
+                + "hsl(212, 92%, 45%), as GitHub does in comments."
         case .emojiShortcodes: "Turns :tada: into 🎉. Part of GitHub Flavored Markdown."
         }
     }

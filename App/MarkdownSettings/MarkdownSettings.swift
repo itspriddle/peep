@@ -63,7 +63,7 @@ final class MarkdownSettings {
     /// The built-in preprocessors Settings offers, in the order it lists them: opt-in
     /// `MarkdownTransform`s, never flavor-owned ones (emoji, alerts). Settings > Markdown hides
     /// the section if it's ever empty.
-    static let optionalPreprocessors: [MarkdownTransform] = [.wikiLinks]
+    static let optionalPreprocessors: [MarkdownTransform] = [.wikiLinks, .colorSwatches]
 
     /// The flavors the default-flavor picker lists.
     let registry: FlavorRegistry
