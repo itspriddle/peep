@@ -154,4 +154,12 @@ struct BundledThemeTests {
         }
         return 0.2126 * channel(color.red) + 0.7152 * channel(color.green) + 0.0722 * channel(color.blue)
     }
+
+    @Test("GitHub undoes Primer's 40px figure indent for diagrams, after the vendored CSS")
+    func diagramFigureMargin() throws {
+        let css = Theme.github.stylesheet
+        let primer = try #require(css.range(of: "margin: 1em var(--base-size-40)"))
+        let override = try #require(css.range(of: ".markdown-body figure.peep-diagram { margin: 0 0 16px; }"))
+        #expect(primer.lowerBound < override.lowerBound)
+    }
 }

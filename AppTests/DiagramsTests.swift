@@ -72,7 +72,7 @@ struct DiagramsTests {
     @Test("a mermaid block becomes an SVG in a figure after its hidden code block")
     func drawsSVG() async throws {
         try await load(Self.flowchart)
-        #expect(try await count("figure.peep-diagram > svg") == 1)
+        #expect(try await count("figure.peep-diagram > .peep-diagram-viewport > svg") == 1)
         #expect(try await count("pre[data-peep-diagram=rendered] + figure.peep-diagram") == 1)
         // The code stays in the page, hidden (ThemeBase), for Copy and find's sake.
         let hidden = try await evaluate(
@@ -92,7 +92,7 @@ struct DiagramsTests {
     @Test("mermaid stays out of the page and app worlds; page scripts stay blocked")
     func isolation() async throws {
         try await load(Self.flowchart + "\n\n<script>document.title = 'pwned';</script>\n")
-        #expect(try await count("figure.peep-diagram svg") == 1)
+        #expect(try await count(".peep-diagram-viewport > svg") == 1)
         #expect(try await evaluate("return typeof globalThis.mermaid;") as? String == "undefined")
         let pageWorld = try await coordinator.webView.callAsyncJavaScript(
             "return typeof globalThis.mermaid;", arguments: [:], in: nil, contentWorld: .page)
@@ -119,7 +119,7 @@ struct DiagramsTests {
               click A "javascript:document.title='pwned'"
             ```
             """)
-        #expect(try await count("figure.peep-diagram svg") == 1)
+        #expect(try await count(".peep-diagram-viewport > svg") == 1)
         let events = try await evaluate(
             """
             return [...document.querySelectorAll("*")]
@@ -136,7 +136,7 @@ struct DiagramsTests {
     func error() async throws {
         try await load("# Broken\n\n```mermaid\ngraph TD\n  A[ --> \n```\n\n```mermaid\ngraph LR\n  X --> Y\n```\n")
         #expect(try await count("pre[data-peep-diagram=error] + p.peep-diagram-error[role=note]") == 1)
-        #expect(try await count("figure.peep-diagram svg") == 1)
+        #expect(try await count(".peep-diagram-viewport > svg") == 1)
         let visible = try await evaluate(
             "return document.querySelector('pre[data-peep-diagram=error]').getClientRects().length;")
         #expect((visible as? NSNumber)?.intValue ?? 0 > 0)
@@ -210,7 +210,7 @@ struct DiagramsTests {
         #expect(try await count("pre[data-source-line='5']") == 1)
         try await coordinator.replaceContent(with: page(Self.flowchart), baseURL: nil)
         await coordinator.pendingDiagramRender?.value
-        #expect(try await count("figure.peep-diagram.peep-diagram-mermaid svg") == 1)
+        #expect(try await count("figure.peep-diagram.peep-diagram-mermaid > .peep-diagram-viewport > svg") == 1)
     }
 
     @Test("off from the start, a mermaid page never loads mermaid")

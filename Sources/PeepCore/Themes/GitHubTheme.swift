@@ -38,6 +38,10 @@ enum GitHubTheme {
         .markdown-body table.frontmatter th, .markdown-body table.frontmatter td {
           text-align: left; vertical-align: top;
         }
+        /* Diagrams (M7) are figures, and Primer indents every figure 40px on each side
+           (`.markdown-body figure`), which github.com never shows for diagrams: they span the
+           column like code blocks. ThemeBase's margin can't win from the base layer. */
+        .markdown-body figure.peep-diagram { margin: 0 0 16px; }
         """
 
     /// highlight.js tokens in Primer's syntax colors (`--color-prettylights-syntax-*`, which

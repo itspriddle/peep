@@ -18,7 +18,8 @@
 ///   positioned over the page, never hit, never printed (their color and fade are defaults);
 /// - a drawn mermaid block's code (`pre[data-peep-diagram="rendered"]`, the app's
 ///   `MermaidDiagrams.js`) staying hidden behind its diagram (the error note's look is a default);
-
+/// - diagram zoom controls (`[data-peep-diagram-controls]`, the app's `DiagramControls.js`) and
+///   zoom never printed (the controls' look is a default);
 /// - diagrams' look (`.peep-diagram`, the map and STL classes; M7) is a default;
 /// - GitHub's `#gh-dark-mode-only` / `#gh-light-mode-only` hiding (`ColorModeImage`);
 /// - structural print rules (#26, #38): light color scheme, no page background, full width,
@@ -57,11 +58,40 @@ public enum ThemeBase {
         /* Diagrams (M7): maps and STL models the renderer draws (`MapDiagram`, `STLDiagram`: a
            `figure.peep-diagram` around an inline SVG). Paths have classes, never colors: they take
            the text color, so every theme works light, dark, and print. Themes may restyle all of it. */
-        .peep-diagram { margin: 0 0 16px; padding: 0; }
-        .peep-diagram > svg {
-          display: block; box-sizing: border-box; width: 100%; height: auto;
+        .peep-diagram {
+          position: relative; box-sizing: border-box; margin: 0 0 16px; padding: 24px 16px;
           border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 6px;
         }
+        .peep-diagram > svg, .peep-diagram-viewport > svg {
+          display: block; box-sizing: border-box; max-width: 100%; height: auto; margin: 0 auto;
+        }
+        /* Maps and models fill the column; mermaid keeps its own inline max-width (its natural
+           size, never scaled up). */
+        .peep-diagram svg:is(.peep-map, .peep-stl) { width: 100%; }
+        /* Zoom and pan (the app's DiagramControls.js): the SVG is scaled and moved inside a
+           viewport that keeps its unzoomed size, so zooming never moves the page. The controls
+           show while the figure is hovered or focused. Never set by documents (the sanitizer
+           drops `data-` attributes); never printed. */
+        .peep-diagram-viewport { overflow: hidden; }
+        .peep-diagram-viewport > svg { transform-origin: 0 0; }
+        .peep-diagram-viewport[data-peep-zoomed] { cursor: grab; }
+        .peep-diagram-viewport[data-peep-dragging] { cursor: grabbing; }
+        [data-peep-diagram-controls] {
+          position: absolute; inset: 8px 8px auto auto; display: flex; flex-direction: column;
+          align-items: flex-end; gap: 6px; opacity: 0; transition: opacity 120ms ease-out;
+        }
+        .peep-diagram:is(:hover, :focus-within) > [data-peep-diagram-controls] { opacity: 1; }
+        .peep-diagram-pad { display: grid; grid-template-columns: repeat(3, 28px); gap: 4px; }
+        [data-peep-diagram-controls] button {
+          display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+          width: 28px; height: 28px; margin: 0; padding: 0; border-radius: 6px; font: inherit;
+          color: inherit; cursor: pointer;
+          border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+          background: color-mix(in srgb, Canvas 85%, currentColor 15%);
+        }
+        [data-peep-diagram-controls] button:hover { background: color-mix(in srgb, Canvas 75%, currentColor 25%); }
+        [data-peep-diagram-controls] svg { width: 16px; height: 16px; fill: currentColor; }
+        @media (prefers-reduced-motion: reduce) { [data-peep-diagram-controls] { transition: none; } }
         .peep-map-area {
           fill: currentColor; fill-opacity: 0.15; stroke: currentColor; stroke-width: 1.5;
           stroke-linejoin: round; vector-effect: non-scaling-stroke;
@@ -130,7 +160,8 @@ public enum ThemeBase {
           ::highlight(peep-find), ::highlight(peep-find-current) {
             background-color: transparent !important; color: inherit !important;
           }
-          [data-peep-changes] { display: none !important; }
+          [data-peep-changes], [data-peep-diagram-controls] { display: none !important; }
+          .peep-diagram-viewport > svg { transform: none !important; }
           :root { color-scheme: light !important; }
           :root, body { print-color-adjust: economy !important; }
           p { orphans: 3; widows: 3; }
