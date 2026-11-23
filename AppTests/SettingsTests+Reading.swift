@@ -2,7 +2,8 @@ import Testing
 
 @testable import PeepApp
 
-/// Settings > Reading: change highlights and the supplemental scroll to the first change.
+/// Settings > Reading: change highlights, the supplemental scroll to the first change, and
+/// bringing the window to the front on save.
 extension SettingsTests {
     @Test("change highlights and scrolling to changes mirror their store and write through")
     func changeHighlights() {
@@ -17,5 +18,17 @@ extension SettingsTests {
         #expect(model.scrollsToChanges)
         highlights.scrollsToChanges = false
         #expect(!model.scrollsToChanges, "follows changes to the store")
+    }
+
+    @Test("raising windows on change mirrors its store and writes through")
+    func raiseOnChange() {
+        let raise = RaiseOnChangeSettings(defaults: defaults, isPersistent: true)
+        let model = model(raiseOnChangeSettings: raise)
+        #expect(!model.raisesWindowOnChange)
+        model.setRaisesWindowOnChange(true)
+        #expect(raise.isEnabled)
+        #expect(model.raisesWindowOnChange)
+        raise.isEnabled = false
+        #expect(!model.raisesWindowOnChange, "follows changes to the store")
     }
 }
