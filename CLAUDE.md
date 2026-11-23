@@ -126,6 +126,8 @@ lock the build database.
     Mermaid (#117) isn't a `DiagramKind`: `MermaidBlocks` only finds blocks (`mermaid`, any
     case) for `RenderedDocument.hasMermaidBlocks` (false with `diagrams` off); the HTML keeps
     the code block and only the app's viewer draws it.
+    `DiagramWindowPage` is the page of the app's diagram window (one SVG over the theme,
+    `ContentSecurityPolicy.diagramWindow`).
   - `AppOpening/`: what the CLI and the app agree on (M5; untrusted on the app's side).
     `AppOpenEvent` builds and reads the Open Documents event and its parameters
     (`AppOpenParameters`: `PepT` theme, `PepW` wait token in `+Wait`, with the
@@ -310,7 +312,12 @@ lock the build database.
     `+Diagrams.swift` (evaluated once per page, only when `RenderedPage.hasMermaidBlocks`, after
     `load`; redrawn after `updateContent`/`replaceContent` swaps and on theme or appearance
     darkness changes; serialized in `pendingDiagramRender`, which the window awaits for a mermaid
-    page before scrolling). Render diagrams off makes `hasMermaidBlocks` false
+    page before scrolling). Diagram controls: `App/Scripts/DiagramControls.js` (app world: a
+    viewport, zoom/pan transform, buttons; a MutationObserver attaches them to new figures)
+    posts Open in Window to `diagramWindow` (`+DiagramWindow.swift`), and
+    `App/Diagrams/DiagramPanelController` shows the SVG in a JavaScript-free panel
+    (`DocumentWindowController+DiagramWindow.swift`; an `NSPanel` is a Dialog to UI tests).
+    Render diagrams off makes `hasMermaidBlocks` false
     (`RenderOptions.diagrams`), and the Settings re-render swaps the code blocks back in.
   - `Scripts/`: bundled JS run only in `AppScripts.world` (but `MermaidDiagrams.js`, in
     `DiagramScripts.world`); pass values as arguments, never splice them into source.

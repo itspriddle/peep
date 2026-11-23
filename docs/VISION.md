@@ -863,6 +863,13 @@ editor or a browser.
   code block. An image in a label loads only as the CSP and `LocalImagePolicy` allow, like any
   document image. Headless output, Copy as HTML, and Quick Look keep the `language-mermaid` code
   block: no JavaScript runs outside the viewer.
+  - **Diagram controls and the diagram window.** Zoom, pan, and Open in Window on every
+    diagram are an app script (`DiagramControls.js`) in the app's `peep` world, never in
+    `peep-diagrams`. Its one message handler, `diagramWindow`, takes a figure index and only
+    from that world. The app reads the SVG back and shows it in a panel whose web view has
+    JavaScript off, no user scripts, no message handlers, and no scheme handlers. It allows only
+    its own page (`DiagramWindowPage`, with `ContentSecurityPolicy.diagramWindow`: no scripts,
+    `data:` images only) and cancels every other navigation.
   - **Licenses.** mermaid's bundle includes elkjs (EPL-2.0 OR GPL-3.0-or-later; mermaid's ELK
     layout). Peep takes it under EPL-2.0, which asks an object code distribution to say where the
     source is: `make vendor-mermaid` writes that note (the upstream tag) into
