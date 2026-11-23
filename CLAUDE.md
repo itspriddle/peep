@@ -181,7 +181,8 @@ lock the build database.
     the custom preprocessor (#57) and processor (#106) sections. `ReadingSettingsView` is
     Settings > Reading: how open documents behave (change highlights). General has no room to
     grow: CI's screen puts its last rows under the Dock (`UpdatesUITests`), so new settings go
-    in another pane.
+    in another pane. A taller pane grows the window down from its top; `keepOnScreen()` moves it
+    back above the Dock, so a pane fits as long as it is shorter than CI's visible screen.
   - `QuickLook/`: `QuickLookConfigurationPublisher` writes `QuickLookConfiguration` to the App
     Group's defaults on launch and on each `ThemeSettings` / `MarkdownSettings` change (custom
     theme files included); off under tests and without a team (`PEEP_APP_GROUP` in
