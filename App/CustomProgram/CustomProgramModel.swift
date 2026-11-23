@@ -1,7 +1,7 @@
 import AppKit
 import PeepCore
 
-/// What Settings > Markdown > Custom preprocessor (#57) or Custom processor (#106) shows and
+/// What Settings > Programs > Custom preprocessor (#57) or Custom processor (#106) shows and
 /// changes, over `CustomProgramSettings`. Part of `SettingsModel` (`customPreprocessor`,
 /// `customProcessor`).
 ///

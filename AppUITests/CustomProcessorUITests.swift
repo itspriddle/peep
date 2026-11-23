@@ -3,7 +3,7 @@ import XCTest
 /// The custom processor (#106), configured with the Debug-only `-PeepUITestProcessor` hook so
 /// tests never depend on the reader's settings: its sanitized output renders, a failing
 /// processor falls back to Peep's renderer with the bar instead of an alert, and turning it
-/// back on in Settings > Markdown needs the warning.
+/// back on in Settings > Programs needs the warning.
 @MainActor
 final class CustomProcessorUITests: XCTestCase {
     private var peep: PeepUITestApp?
@@ -50,7 +50,7 @@ final class CustomProcessorUITests: XCTestCase {
         peep.waitForRenderedText("Rendered by the processor.", in: window)
 
         let settings = peep.openSettings()
-        peep.showSettingsPane("Markdown")
+        peep.showSettingsPane("Programs")
         let toggle = settings.checkBoxes["settings-custom-processor"]
         XCTAssertTrue(toggle.waitForExistence(timeout: PeepUITestApp.defaultTimeout), "toggle")
         XCTAssertEqual(toggle.value as? Int, 1)

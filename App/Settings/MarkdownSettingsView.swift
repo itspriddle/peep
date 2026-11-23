@@ -11,9 +11,11 @@ import SwiftUI
 /// - Frontmatter: hidden or shown as a table.
 /// - Render diagrams (M7): geojson and topojson blocks as maps, stl blocks as models.
 /// - Built-in preprocessors: one toggle per `MarkdownSettings.optionalPreprocessors` entry
-///   (wiki links, #53), with its note; hidden while the list is empty.
-/// - Custom preprocessor (#57) and Custom processor (#106): a `CustomProgramSection` each, last,
-///   below the built-in ones.
+///   (wiki links, #53; color swatches), with its note; hidden while the list is empty.
+///
+/// The custom preprocessor and processor are Settings > Programs (`ProgramsSettingsView`). Keep
+/// this pane shorter than CI's visible screen: rows below it are under the Dock, where UI tests
+/// can't click them.
 struct MarkdownSettingsView: View {
     let model: SettingsModel
 
@@ -54,9 +56,6 @@ struct MarkdownSettingsView: View {
                     }
                 }
             }
-
-            CustomProgramSection(model: model.customPreprocessor)
-            CustomProgramSection(model: model.customProcessor)
         }
         .formStyle(.columns)
         .padding(20)

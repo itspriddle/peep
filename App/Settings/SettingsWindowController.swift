@@ -27,6 +27,8 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate {
         tabs.addTabViewItem(
             Self.pane("Markdown", symbol: "doc.text", identifier: "markdown", MarkdownSettingsView(model: model)))
         tabs.addTabViewItem(
+            Self.pane("Programs", symbol: "terminal", identifier: "programs", ProgramsSettingsView(model: model)))
+        tabs.addTabViewItem(
             Self.pane("Reading", symbol: "book", identifier: "reading", ReadingSettingsView(model: model)))
         tabs.addTabViewItem(
             Self.pane("Quick Look", symbol: "eye", identifier: "quicklook", QuickLookSettingsView(model: model)))

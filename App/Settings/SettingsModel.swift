@@ -56,9 +56,9 @@ final class SettingsModel: NSObject {
     /// Sparkle's updater (#81), which owns the update settings; inactive (in memory) by default,
     /// so a model built without one never touches the reader's settings or the network.
     @ObservationIgnored let updater: any SoftwareUpdating
-    /// Settings > Markdown > Custom preprocessor (#57), with its own model and store.
+    /// Settings > Programs > Custom preprocessor (#57), with its own model and store.
     @ObservationIgnored let customPreprocessor: CustomProgramModel
-    /// Settings > Markdown > Custom processor (#106), with its own model and store.
+    /// Settings > Programs > Custom processor (#106), with its own model and store.
     @ObservationIgnored let customProcessor: CustomProgramModel
     /// Opens the custom themes folder (#35, the same action as View > Theme > Open Themes
     /// Folder); nil where custom themes are off (hosted tests, UI tests without a folder).

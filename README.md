@@ -87,7 +87,7 @@ peep:
 ## Custom preprocessor
 
 Peep can run a program of your choice on every document before rendering it, for formats or
-conventions it doesn't know. It is off by default. Turn it on in Settings > Markdown > Custom
+conventions it doesn't know. It is off by default. Turn it on in Settings > Programs > Custom
 preprocessor: choose the program with Choose... and add any arguments, one per field.
 
 - The program gets the document on standard input and writes Markdown to standard output; exit
@@ -113,7 +113,7 @@ preprocessor: choose the program with Choose... and add any arguments, one per f
 
 Peep can also hand rendering to another Markdown renderer, such as pandoc, markdown-it, or
 comrak, and show its HTML in the Peep window, with your theme, the outline, and live reload. It
-is off by default. Turn it on in Settings > Markdown > Custom processor, the same way as the
+is off by default. Turn it on in Settings > Programs > Custom processor, the same way as the
 preprocessor.
 
 - The program gets the Markdown after the frontmatter on standard input and writes HTML (a

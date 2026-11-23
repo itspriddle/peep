@@ -1,8 +1,8 @@
 import PeepCore
 import SwiftUI
 
-/// Settings > Markdown > Custom preprocessor (#57) and Custom processor (#106), the pane's last
-/// sections, one per `model.kind`: the on/off toggle (behind a warning), the program (chosen
+/// Settings > Programs > Custom preprocessor (#57) and Custom processor (#106)
+/// (`ProgramsSettingsView`), one per `model.kind`: the on/off toggle (behind a warning), the program (chosen
 /// with an Open panel, never typed), its arguments as a list, the last run in this session, and
 /// Reset. Identifiers (`settings-custom-preprocessor*`, `settings-custom-processor*`) are for UI
 /// tests.

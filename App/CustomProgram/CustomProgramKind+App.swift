@@ -4,7 +4,7 @@ import PeepCore
 /// the accessibility identifier prefix UI tests find them by: `settings-custom-<noun>…` and
 /// `<noun>-failure-…`.
 extension CustomProgramKind {
-    /// Settings > Markdown's section title.
+    /// Settings > Programs' section title.
     var sectionTitle: String {
         switch self {
         case .preprocessor: "Custom preprocessor"
