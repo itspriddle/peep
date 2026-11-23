@@ -62,12 +62,17 @@ lock the build database.
     `RenderOptions.applying(_:)` is the one place it changes a render (the flavor and the
     `.wikiLinks` built-in preprocessor only): never route a safety setting through it.
   - `Transforms/`: AST passes. `MarkdownTransform` (enum; declaration order is run order:
-    alerts, wiki links, emoji) names each pass; its implementation conforms to
+    alerts, wiki links, color swatches, emoji) names each pass; its implementation conforms to
     `MarkdownTreeTransform`. Enabled by `Flavor.transforms` or
     `RenderOptions.builtInPreprocessors`. Emoji shortcodes and GitHub alerts (`GitHubAlerts`,
     top-level `> [!NOTE]` quotes to `MarkdownNode.Kind.alert`; markup and Octicons in
     `Rendering/HTMLRenderer+Alerts.swift`) live here, and so do wiki links (`WikiLinks`, #53:
     `[[Page]]` text to `MarkdownNode.Kind.wikiLink`; markup in `HTMLRenderer+WikiLinks.swift`).
+  - `ColorSwatches/`: `SwatchColor` (GitHub's color code forms, checked with `gh api markdown`:
+    `#RRGGBB`, `rgb()`/`rgba()`, `hsl()`; kept as bytes, written only as `hex`) and the
+    `ColorSwatches` transform (`MarkdownTransform.colorSwatches`, an opt-in built-in
+    preprocessor; the one pass that reads `code`: a whole-literal color becomes
+    `MarkdownNode.Kind.colorCode`, rendered as the code plus `span.peep-color-swatch`).
   - `WikiLinks/`: wiki link pages and resolution (#53). `WikiPage` (the naming rule),
     `WikiLinkResolver` (injected into `HTMLRenderer.wikiLinkResolver`; the search rules never
     read the disk), `FolderWikiLinkResolver` (document folder, then allowed root, entry cap, over

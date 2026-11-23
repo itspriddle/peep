@@ -178,6 +178,7 @@ appear in code blocks. Typical output:
 | Wiki links | `[[Page]]` when the reader turns wiki links on: `<a class="wikilink" href="Page.md">` for a page that exists, `<a class="wikilink wikilink-missing">` (no `href`) for one that doesn't. See [Wiki links](#wiki-links). |
 | Code blocks | `<pre><code class="language-swift">` (no class without a language) with highlight.js token spans inside |
 | Inline code, keys | `code`, `kbd` (from raw HTML) |
+| Color swatches | Inline code that is a color (`#0969DA`, `rgb(…)`, `hsl(…)`) when the reader turns color swatches on: `<code>#0969DA<span class="peep-color-swatch" style="background-color: #0969da"></span></code>`. The base layer draws an 8px dot with a faint ring in the text color; restyle `.markdown-body .peep-color-swatch` (size, ring, spacing), but leave `background-color` to the inline style. |
 | Tables | `table` → `thead`/`tbody` → `tr` → `th`/`td`; column alignment is an `align` attribute (`th[align="right"]`) |
 | Images | `img`. Local images load; remote ones are replaced by a placeholder (below) until the reader allows them. |
 | Footnotes | References: `<sup><a href="#fn-note" id="fnref-note" data-footnote-ref>1</a></sup>`. Notes: `<section class="footnotes" data-footnotes>` holding a visually hidden `h2.sr-only` and an `ol` of `li id="fn-note"`, each ending with a back link `<a class="data-footnote-backref" data-footnote-backref>↩</a>` |

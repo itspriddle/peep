@@ -8,6 +8,9 @@ echo '# Markdown' | peep
 peep --html README.md > README.html
 ```
 
+- `hsl(212, 92%, 45%)`
+- `#0969DA`
+
 > **Status:** early development. Website: [peep.now](https://peep.now). See
 > [docs/VISION.md](docs/VISION.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -178,7 +181,9 @@ peep --html --no-diagrams map.md > map.html     # geojson, topojson, and stl blo
   that don't load are reported on standard error).
 - Rendering flags: `--frontmatter table` shows frontmatter before the body (hidden by default);
   `--wiki-links` / `--no-wiki-links` turn `[[wiki links]]` on or off, beating the document's
-  `peep.wikilinks`; `--source-lines` adds `data-source-line` attributes; `--no-highlight`,
+  `peep.wikilinks`; `--color-swatches` shows a swatch after inline code that is a color
+  (`` `#0969DA` ``, `` `rgb(9, 105, 218)` ``, `` `hsl(212, 92%, 45%)` ``), as GitHub does in
+  comments; `--source-lines` adds `data-source-line` attributes; `--no-highlight`,
   `--no-diagrams` (maps and models), and `--no-heading-anchors` turn those off; `--block-remote-images` replaces remote images with a
   placeholder (they're kept by default, as on GitHub). Raw HTML is always sanitized; there is no
   flag to turn that off. The CLI ignores the app's Settings: output depends only on the flags
