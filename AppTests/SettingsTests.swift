@@ -14,10 +14,9 @@ final class SettingsTests: DocumentWindowTestCase {
 
     func model(
         appearanceSettings: AppearanceSettings? = nil, themeSettings: ThemeSettings? = nil,
-        zoomSettings: ZoomSettings? = nil,
-        contentWidthSettings: ContentWidthSettings? = nil, markdownSettings: MarkdownSettings? = nil,
-        collapsibleSectionsSettings: CollapsibleSectionsSettings? = nil,
-        changeHighlightsSettings: ChangeHighlightsSettings? = nil,
+        zoomSettings: ZoomSettings? = nil, contentWidthSettings: ContentWidthSettings? = nil,
+        markdownSettings: MarkdownSettings? = nil, collapsibleSectionsSettings: CollapsibleSectionsSettings? = nil,
+        changeHighlightsSettings: ChangeHighlightsSettings? = nil, raiseOnChangeSettings: RaiseOnChangeSettings? = nil,
         openThemesFolder: (@MainActor () -> Void)? = nil
     ) -> SettingsModel {
         workspace.setHandler("com.example.other")
@@ -33,6 +32,8 @@ final class SettingsTests: DocumentWindowTestCase {
                 ?? CollapsibleSectionsSettings(defaults: defaults, isPersistent: true),
             changeHighlightsSettings: changeHighlightsSettings
                 ?? ChangeHighlightsSettings(defaults: defaults, isPersistent: true),
+            raiseOnChangeSettings: raiseOnChangeSettings
+                ?? RaiseOnChangeSettings(defaults: defaults, isPersistent: true),
             outlinePreference: OutlinePreference(defaults: defaults, isPersistent: true),
             pinPreference: WindowPinPreference(defaults: defaults, isPersistent: true),
             markdownSettings: markdownSettings ?? MarkdownSettings(defaults: defaults, isPersistent: true),

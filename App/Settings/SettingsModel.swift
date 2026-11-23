@@ -18,6 +18,7 @@ import PeepCore
 /// | Collapsible sections | `CollapsibleSectionsSettings.isEnabled` | every window, live |
 /// | Highlight changes on save (Reading pane) | `ChangeHighlightsSettings.isEnabled` | every window, next reload |
 /// | Scroll to the first change (Reading pane) | `ChangeHighlightsSettings.scrollsToChanges` | every window, next reload |
+/// | Bring the window to the front on save (Reading pane) | `RaiseOnChangeSettings.isEnabled` | every window, next reload |
 /// | Default Markdown viewer | `DefaultViewer` (Launch Services) | system-wide |
 /// | Default flavor | `MarkdownSettings.defaultFlavorID` | every document, live (#55) |
 /// | Frontmatter display | `MarkdownSettings.frontmatterDisplay` | every document, live (#55) |
@@ -47,6 +48,7 @@ final class SettingsModel: NSObject {
     @ObservationIgnored let contentWidthSettings: ContentWidthSettings
     @ObservationIgnored let collapsibleSectionsSettings: CollapsibleSectionsSettings
     @ObservationIgnored let changeHighlightsSettings: ChangeHighlightsSettings
+    @ObservationIgnored let raiseOnChangeSettings: RaiseOnChangeSettings
     @ObservationIgnored let outlinePreference: OutlinePreference
     @ObservationIgnored let pinPreference: WindowPinPreference
     @ObservationIgnored let markdownSettings: MarkdownSettings
@@ -86,6 +88,8 @@ final class SettingsModel: NSObject {
     private(set) var highlightsChanges = false
     /// Whether a live reload scrolls to its first change (while `highlightsChanges`).
     private(set) var scrollsToChanges = false
+    /// Whether a live reload that changed the text brings its window to the front.
+    private(set) var raisesWindowOnChange = false
     private(set) var showsOutlineInNewWindows = false
     private(set) var pinsNewWindows = false
     private(set) var isDefaultViewer = false
@@ -114,6 +118,7 @@ final class SettingsModel: NSObject {
         contentWidthSettings: ContentWidthSettings = .shared,
         collapsibleSectionsSettings: CollapsibleSectionsSettings = .shared,
         changeHighlightsSettings: ChangeHighlightsSettings = .shared,
+        raiseOnChangeSettings: RaiseOnChangeSettings = .shared,
         outlinePreference: OutlinePreference = OutlinePreference(),
         pinPreference: WindowPinPreference = WindowPinPreference(),
         markdownSettings: MarkdownSettings = .shared,
@@ -131,6 +136,7 @@ final class SettingsModel: NSObject {
         self.contentWidthSettings = contentWidthSettings
         self.collapsibleSectionsSettings = collapsibleSectionsSettings
         self.changeHighlightsSettings = changeHighlightsSettings
+        self.raiseOnChangeSettings = raiseOnChangeSettings
         self.outlinePreference = outlinePreference
         self.pinPreference = pinPreference
         self.markdownSettings = markdownSettings
@@ -158,6 +164,9 @@ final class SettingsModel: NSObject {
             self, selector: refreshSelector, name: ChangeHighlightsSettings.didChangeNotification,
             object: changeHighlightsSettings)
         center.addObserver(
+            self, selector: refreshSelector, name: RaiseOnChangeSettings.didChangeNotification,
+            object: raiseOnChangeSettings)
+        center.addObserver(
             self, selector: refreshSelector, name: MarkdownSettings.didChangeNotification, object: markdownSettings)
     }
 
@@ -182,6 +191,7 @@ final class SettingsModel: NSObject {
         collapsesSections = collapsibleSectionsSettings.isEnabled
         highlightsChanges = changeHighlightsSettings.isEnabled
         scrollsToChanges = changeHighlightsSettings.scrollsToChanges
+        raisesWindowOnChange = raiseOnChangeSettings.isEnabled
         showsOutlineInNewWindows = outlinePreference.showsOutlineInNewWindows
         pinsNewWindows = pinPreference.pinsNewWindows
         isDefaultViewer = defaultViewerOffer.viewer.isDefault
@@ -279,6 +289,12 @@ final class SettingsModel: NSObject {
     /// Live reloads scroll to their first change (or stop), in every window, while highlights are on.
     func setScrollsToChanges(_ scrolls: Bool) {
         changeHighlightsSettings.scrollsToChanges = scrolls
+        refresh()
+    }
+
+    /// Live reloads that change the text bring the window forward (or stop), in every window.
+    func setRaisesWindowOnChange(_ raises: Bool) {
+        raiseOnChangeSettings.isEnabled = raises
         refresh()
     }
 

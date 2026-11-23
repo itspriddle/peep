@@ -68,6 +68,15 @@ final class MarkdownDocument: NSDocument {
     /// own store right after opening.
     @ObservationIgnored var changeHighlightsSettings: ChangeHighlightsSettings = .shared
 
+    /// The window the last live reload brings to the front ("Bring the window to the front when
+    /// a file is saved"): set only when that reload changed the text while the setting is on,
+    /// `nil` after any other `setContent(_:changes:textChanged:)`.
+    @ObservationIgnored private(set) weak var raiseTarget: DocumentWindowController?
+
+    /// The setting that decides whether a live reload sets `raiseTarget`. Tests set their own
+    /// store right after opening.
+    @ObservationIgnored var raiseOnChangeSettings: RaiseOnChangeSettings = .shared
+
     /// The Markdown settings (#55) this document renders with. Changing them (or the store)
     /// renders the document again. Tests set their own store right after opening.
     @ObservationIgnored var markdownSettings: MarkdownSettings = .shared {
@@ -244,12 +253,14 @@ final class MarkdownDocument: NSDocument {
     /// was already running) is shown, then rendered again with the current preferences.
     ///
     /// `changes` is what a live reload changed (`LiveReloader`); every other caller leaves it
-    /// out, which clears the windows' marks.
-    func setContent(_ content: DocumentContent, changes: SourceChanges? = nil) {
+    /// out, which clears the windows' marks. `textChanged` says a live reload read new text,
+    /// which brings a window forward while `raiseOnChangeSettings` is on (`raiseTarget`).
+    func setContent(_ content: DocumentContent, changes: SourceChanges? = nil, textChanged: Bool = false) {
         LaunchTiming.mark("rendered")
         dropPendingRender()
         self.content = content
         contentChanges = changes
+        raiseTarget = textChanged && raiseOnChangeSettings.isEnabled ? frontmostWindowController() : nil
         let documentName: String = fileURL?.lastPathComponent ?? displayName
         if content.preferences.customPreprocessor != nil {
             customPreprocessorSettings.recordRun(
@@ -265,6 +276,18 @@ final class MarkdownDocument: NSDocument {
         }
         renderIfSettingsChanged()
         updateRenderActivity()
+    }
+
+    /// The document's window nearest the front (the one a reader last used), else its first
+    /// window (all minimized or hidden).
+    private func frontmostWindowController() -> DocumentWindowController? {
+        let controllers = windowControllers.compactMap { $0 as? DocumentWindowController }
+        for window in NSApp.orderedWindows {
+            if let controller = controllers.first(where: { $0.window === window }) {
+                return controller
+            }
+        }
+        return controllers.first
     }
 
     /// Updates `isRendering` from the render and the live reload in flight, and tells the

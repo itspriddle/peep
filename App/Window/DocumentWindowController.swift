@@ -227,6 +227,7 @@ final class DocumentWindowController: NSWindowController {
         // new base URL (and root), so the page is loaded again rather than swapped in place.
         let baseURL = coordinator.documentURL(forFileAt: markdownDocument.fileURL)
         let changes = markdownDocument.contentChanges
+        let raises = markdownDocument.raiseTarget === self
         let previous = displayTask
         previous?.cancel()
         displayTask = Task { [coordinator, weak self] in
@@ -249,6 +250,9 @@ final class DocumentWindowController: NSWindowController {
                 await scrollToPendingFragment()
                 await scrollToPendingSourceLine()
                 await showChanges(changes)
+                if raises {
+                    bringForwardAfterReload()
+                }
                 await updateOutlinePosition()
                 await refreshFind()
                 if isFirstPage {
